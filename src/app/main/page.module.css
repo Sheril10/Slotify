@@ -1,0 +1,97 @@
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  padding: 40px;
+}
+
+.logo {
+  width: 40%;
+  height: auto;
+}
+
+.verticalLine {
+  width: 6px;
+  height: 400px;
+  background-color: #000;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 40px 50px;          /* Bigger padding */
+  background-color: #f9f9f9;
+  border-radius: 12px;         /* Slightly rounder */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  min-width: 350px;            /* Bigger width */
+  transition: transform 0.2s ease;
+}
+
+/* Optional: subtle lift effect on hover */
+.card:hover {
+  transform: translateY(-5px);
+}
+
+.card h2 {
+  margin: 0 0 10px 0;
+  text-align: center;
+  font-family: 'Poppins', sans-serif; /* stylish font */
+  font-weight: 700;
+  font-size: 1.8rem;
+  color: #333;
+}
+
+.input {
+  padding: 14px 18px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-family: 'Roboto', sans-serif;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  outline: none;
+}
+
+/* Stylish input focus effect */
+.input:focus {
+  border-color: #0070f3;
+  box-shadow: 0 0 8px rgba(0, 112, 243, 0.5);
+}
+
+/* Buttons common styles */
+.loginButton,
+.signupButton {
+  padding: 14px 0;
+  font-size: 1.1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+/* Login button styles */
+.loginButton {
+  background-color: #0070f3;
+  color: white;
+}
+
+/* Login button hover */
+.loginButton:hover {
+  background-color: #005bb5;
+  transform: scale(1.05);
+}
+
+/* Signup button styles */
+.signupButton {
+  background-color: #eaeaea;
+  color: #333;
+}
+
+/* Signup button hover */
+.signupButton:hover {
+  background-color: #cfcfcf;
+  transform: scale(1.05);
+}
