@@ -11,7 +11,6 @@ export default function Dashboard() {
   const [newName, setNewName] = useState("");
   const router = useRouter();
 
-  // ✅ Get current user info from localStorage (client-side safe)
   const [email, setEmail] = useState(null);
 
   useEffect(() => {
@@ -21,13 +20,11 @@ export default function Dashboard() {
     }
   }, []);
 
-  // ✅ Redirect if no user is logged in
   useEffect(() => {
     const user = localStorage.getItem("token");
     if (!user) router.push("/");
   }, [router]);
 
-  // ✅ Expand/Collapse function for sidebar sections
   const toggleExpand = (section) => {
     setExpanded(expanded === section ? null : section);
   };
@@ -37,7 +34,6 @@ export default function Dashboard() {
     router.push("/");
   };
 
-  // ✅ Create a new timetable card
   const saveCard = () => {
     if (newName.trim() === "") return;
     if (newName.trim().length > 30) {
@@ -53,18 +49,15 @@ export default function Dashboard() {
     setNewName("");
   };
 
-  // ✅ Delete timetable
   const deleteCard = (id) => {
     const updated = cards.filter((card) => card.id !== id);
     setCards(updated);
     localStorage.setItem(`timetables_${email}`, JSON.stringify(updated));
   };
 
-// ✅ Open timetable and move to top of list
-const openTimetable = (name) => {
-  router.push(`/front/${encodeURIComponent(name)}`);
-};
-
+  const openTimetable = (name) => {
+    router.push(`/front/${encodeURIComponent(name)}`);
+  };
 
   const recentTimetables = cards.slice(0, 3);
 
@@ -133,55 +126,60 @@ const openTimetable = (name) => {
 
       {/* Main Section */}
       <div className={styles.main}>
-        <div className={styles.titleRow}>
-          <h1 className={styles.title}>GENERATE TIMETABLES</h1>
-          {cards.length > 0 && (
-            <button className={styles.statusBox}>
-              Active Status:
-              <br /> {cards[0].name}
-            </button>
-          )}
-        </div>
-
-        <div className={styles.addRow}>
-          <div className={styles.addBtnWrapper}>
-            <button onClick={() => setShowModal(true)} className={styles.addBtn}>
-              <img src="/img1.png" alt="Add" className={styles.addIcon} />
-            </button>
-            <span className={styles.addLabel}>Add Timetable</span>
+        <div className={styles.scrollContent}>
+          <div className={styles.titleRow}>
+            <h1 className={styles.title}>GENERATE TIMETABLES</h1>
+            {cards.length > 0 && (
+              <button className={styles.statusBox}>
+                Active Status:
+                <br /> {cards[0].name}
+              </button>
+            )}
           </div>
 
-          <div className={styles.cardContainer}>
-            {cards.map((card, index) => (
-              <div
-                key={card.id}
-                className={`${styles.cardWrapper} ${
-                  index === 0 ? styles.firstCard : ""
-                }`}
+          <div className={styles.addRow}>
+            <div className={styles.addBtnWrapper}>
+              <button
+                onClick={() => setShowModal(true)}
+                className={styles.addBtn}
               >
-                <button
-                  className={styles.cardBtn}
-                  onClick={() => openTimetable(card.name)}
+                <img src="/img1.png" alt="Add" className={styles.addIcon} />
+              </button>
+              <span className={styles.addLabel}>Add Timetable</span>
+            </div>
+
+            <div className={styles.cardContainer}>
+              {cards.map((card, index) => (
+                <div
+                  key={card.id}
+                  className={`${styles.cardWrapper} ${
+                    index === 0 ? styles.firstCard : ""
+                  }`}
                 >
-                  <img
-                    src="/img1.png"
-                    alt="Timetable"
-                    className={styles.addIcon}
-                  />
-                </button>
-                <div className={styles.cardLabelRow}>
-                  <span className={styles.cardLabel} title={card.name}>
-                    {card.name}
-                  </span>
-                  <img
-                    src="/trash.png"
-                    alt="Delete"
-                    className={styles.trashIcon}
-                    onClick={() => deleteCard(card.id)}
-                  />
+                  <button
+                    className={styles.cardBtn}
+                    onClick={() => openTimetable(card.name)}
+                  >
+                    <img
+                      src="/tt.png"
+                      alt="Timetable"
+                      className={styles.addIcon1}
+                    />
+                  </button>
+                  <div className={styles.cardLabelRow}>
+                    <span className={styles.cardLabel} title={card.name}>
+                      {card.name}
+                    </span>
+                    <img
+                      src="/trash.png"
+                      alt="Delete"
+                      className={styles.trashIcon}
+                      onClick={() => deleteCard(card.id)}
+                    />
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>
