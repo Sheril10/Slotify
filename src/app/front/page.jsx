@@ -3,23 +3,37 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
+import ConfirmModal from "./ConfirmModal";
 
 export default function Dashboard() {
   const [expanded, setExpanded] = useState(null);
   const [cards, setCards] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [newName, setNewName] = useState("");
+
+  const [user, setUser] = useState(null);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  // ✅ ONLY ADDED FOR DELETE CONFIRM
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+
   const router = useRouter();
 
-  const [email, setEmail] = useState(null);
-
+  // Load user
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const user = JSON.parse(localStorage.getItem("token"));
-      setEmail(user?.email || null);
+      const stored = JSON.parse(localStorage.getItem("token"));
+      if (stored) {
+        setUser({
+          email: stored.email || "",
+          username: stored.username || "User",
+        });
+      }
     }
   }, []);
 
+  // Auth guard
   useEffect(() => {
     const user = localStorage.getItem("token");
     if (!user) router.push("/");
@@ -29,9 +43,18 @@ export default function Dashboard() {
     setExpanded(expanded === section ? null : section);
   };
 
-  const logout = () => {
+  const openLogoutConfirm = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = () => {
     localStorage.removeItem("token");
+    setShowLogoutConfirm(false);
     router.push("/");
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutConfirm(false);
   };
 
   const saveCard = () => {
@@ -43,16 +66,32 @@ export default function Dashboard() {
 
     const updated = [{ id: Date.now(), name: newName.trim() }, ...cards];
     setCards(updated);
-    localStorage.setItem(`timetables_${email}`, JSON.stringify(updated));
+    localStorage.setItem(`timetables_${user?.email}`, JSON.stringify(updated));
 
     setShowModal(false);
     setNewName("");
   };
 
+  // ❌ REPLACED LOGIC (no direct delete anymore)
   const deleteCard = (id) => {
-    const updated = cards.filter((card) => card.id !== id);
+    setDeleteId(id);
+    setShowDeleteConfirm(true);
+  };
+
+  // ✅ CONFIRM DELETE
+  const confirmDeleteCard = () => {
+    const updated = cards.filter((card) => card.id !== deleteId);
     setCards(updated);
-    localStorage.setItem(`timetables_${email}`, JSON.stringify(updated));
+    localStorage.setItem(`timetables_${user?.email}`, JSON.stringify(updated));
+
+    setDeleteId(null);
+    setShowDeleteConfirm(false);
+  };
+
+  // ❌ CANCEL DELETE
+  const cancelDeleteCard = () => {
+    setDeleteId(null);
+    setShowDeleteConfirm(false);
   };
 
   const openTimetable = (name) => {
@@ -70,6 +109,20 @@ export default function Dashboard() {
           alt="Logo"
           className={styles.logo}
         />
+
+        {/* USER INFO */}
+        {user && (
+          <div className={styles.userBox}>
+            <div className={styles.avatar}>
+              {user.username?.charAt(0)?.toUpperCase()}
+            </div>
+
+            <div className={styles.userInfo}>
+              <p className={styles.username}>{user.username}</p>
+              <p className={styles.email}>{user.email}</p>
+            </div>
+          </div>
+        )}
 
         <div className={styles.nav}>
           <button className={styles.navItem}>Home</button>
@@ -97,10 +150,10 @@ export default function Dashboard() {
             >
               Settings
             </button>
+
             {expanded === "settings" && (
               <div className={styles.subMenu}>
-                <button className={styles.subItem}>Configuration</button>
-                <button className={styles.subItem} onClick={logout}>
+                <button className={styles.subItem} onClick={openLogoutConfirm}>
                   Logout
                 </button>
               </div>
@@ -114,6 +167,7 @@ export default function Dashboard() {
             >
               Help
             </button>
+
             {expanded === "help" && (
               <div className={styles.subMenu}>
                 <button className={styles.subItem}>Contact Support</button>
@@ -129,6 +183,7 @@ export default function Dashboard() {
         <div className={styles.scrollContent}>
           <div className={styles.titleRow}>
             <h1 className={styles.title}>GENERATE TIMETABLES</h1>
+
             {cards.length > 0 && (
               <button className={styles.statusBox}>
                 Active Status:
@@ -160,16 +215,14 @@ export default function Dashboard() {
                     className={styles.cardBtn}
                     onClick={() => openTimetable(card.name)}
                   >
-                    <img
-                      src="/tt.png"
-                      alt="Timetable"
-                      className={styles.addIcon1}
-                    />
+                    <img src="/tt.png" alt="Timetable" className={styles.addIcon1} />
                   </button>
+
                   <div className={styles.cardLabelRow}>
                     <span className={styles.cardLabel} title={card.name}>
                       {card.name}
                     </span>
+
                     <img
                       src="/trash.png"
                       alt="Delete"
@@ -184,11 +237,30 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Logout Confirm Modal */}
+      {showLogoutConfirm && (
+        <ConfirmModal
+          message="Are you sure you want to logout? "
+          onConfirm={confirmLogout}
+          onCancel={cancelLogout}
+        />
+      )}
+
+      {/* ✅ DELETE CONFIRM MODAL (ADDED ONLY) */}
+      {showDeleteConfirm && (
+        <ConfirmModal
+          message="Are you sure you want to delete this timetable?"
+          onConfirm={confirmDeleteCard}
+          onCancel={cancelDeleteCard}
+        />
+      )}
+
+      {/* Create Timetable Modal */}
       {showModal && (
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
             <h3>Enter name of your timetable</h3>
+
             <input
               type="text"
               value={newName}
@@ -198,6 +270,7 @@ export default function Dashboard() {
               placeholder="Timetable name (max 30 chars)"
               maxLength={30}
             />
+
             <div className={styles.modalActions}>
               <button onClick={saveCard} className={styles.saveBtn}>
                 Save

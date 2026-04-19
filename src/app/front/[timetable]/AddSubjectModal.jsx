@@ -2,90 +2,139 @@
 
 import { useEffect, useState } from "react";
 import styles from "./addSubject.module.css";
+import ConfirmModal from "./ConfirmModal";
 
-export default function AddSubjectModal({ onClose, onSubmit, subjects, setSubjects, groups, sessions }) {
+export default function AddSubjectModal({
+  onClose,
+  onSubmit,
+  subjects,
+  setSubjects,
+}) {
   const [localRows, setLocalRows] = useState(() =>
-    subjects && subjects.length ? subjects.map(r => ({ ...r })) : []
+    subjects?.length ? subjects.map(r => ({ ...r })) : []
   );
 
   const [mode, setMode] = useState("");
   const [editingIndex, setEditingIndex] = useState(null);
+
   const [form, setForm] = useState({
-    subjectName: "",
-    group: "",
-    session: "",
-    weeklyLoad: "",
-    courseType: "", // Lab / Theory
-    isMergeable: false,
+    sr: "",
+    subjectId: "",
+    name: "",
+    code: "",
+    isLab: ""
   });
+
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const MAX_VISIBLE = 5;
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const MAX_VISIBLE = 3;
 
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
+    return () => (document.body.style.overflow = prev);
   }, []);
 
+  // ================= CLOSE =================
+  const handleClose = () => {
+    setSubjects(localRows);
+    onClose();
+  };
+
+  // ================= ADD =================
   const startAdd = () => {
     setMode("add");
+    setEditingIndex(localRows.length);
+
     setForm({
-      subjectName: "",
-      group: "",
-      session: "",
-      weeklyLoad: "",
-      courseType: "",
-      isMergeable: false,
+      sr: (localRows.length + 1).toString(),
+      subjectId: "",
+      name: "",
+      code: "",
+      isLab: ""
     });
+
     setError("");
   };
 
   const startEdit = (index) => {
     setMode("edit");
     setEditingIndex(index);
-    const r = localRows[index];
-    setForm({ ...r });
+    setForm(localRows[index]);
     setError("");
   };
 
+  // ================= SAVE =================
   const saveRow = () => {
-    const { subjectName, group, session, weeklyLoad, courseType } = form;
-    if (!subjectName.trim() || !group || !session || !weeklyLoad || !courseType) {
-      setError("⚠ Please fill all required fields.");
-      return;
-    }
+    if (!(form.subjectId || "").trim())
+      return setError("Subject ID required");
+
+    if (!(form.name || "").trim())
+      return setError("Subject Name required");
+
+    if (!(form.code || "").trim())
+      return setError("Code required");
+
+    if (!form.isLab)
+      return setError("Select Lab option");
 
     const updated = [...localRows];
-    if (mode === "edit" && editingIndex !== null) {
+
+    if (mode === "edit") {
       updated[editingIndex] = form;
     } else {
-      updated.push(form);
+      updated.push({
+        ...form,
+        sr: (updated.length + 1).toString(),
+      });
     }
-    setLocalRows(updated);
+
+    const normalized = updated.map((r, i) => ({
+      ...r,
+      sr: (i + 1).toString(),
+    }));
+
+    setLocalRows(normalized);
     setMode("");
+    setEditingIndex(null);
+
     setForm({
-      subjectName: "",
-      group: "",
-      session: "",
-      weeklyLoad: "",
-      courseType: "",
-      isMergeable: false,
+      sr: "",
+      subjectId: "",
+      name: "",
+      code: "",
+      isLab: ""
     });
+
+    setError("");
   };
 
-  const deleteRow = (index) => {
-    const updated = localRows.filter((_, i) => i !== index);
+  const deleteRow = (i) => {
+    const updated = localRows
+      .filter((_, idx) => idx !== i)
+      .map((r, j) => ({ ...r, sr: (j + 1).toString() }));
+
     setLocalRows(updated);
+
+    if (updated.length === 0) setSubjects([]);
+  };
+
+  const resetAll = () => setShowConfirm(true);
+
+  const confirmReset = () => {
+    setLocalRows([]);
+    setSubjects([]);
+    setShowConfirm(false);
+    setMode("");
+    setEditingIndex(null);
   };
 
   const handleSubmit = () => {
-    if (localRows.length === 0) {
-      setError("⚠ Please add at least one subject before submitting.");
-      return;
-    }
+    if (localRows.length === 0)
+      return setError("Add at least one subject");
+
     setSubjects(localRows);
     onSubmit(localRows);
   };
@@ -95,186 +144,160 @@ export default function AddSubjectModal({ onClose, onSubmit, subjects, setSubjec
     onClose();
   };
 
-  const resetAll = () => {
-    setLocalRows([]);
-    setForm({
-      subjectName: "",
-      group: "",
-      session: "",
-      weeklyLoad: "",
-      courseType: "",
-      isMergeable: false,
-    });
-    setError("");
-  };
-
-  const handleSearchToggle = () => {
-    setMode((m) => (m === "search" ? "" : "search"));
-    setSearchQuery("");
-  };
-
-  const filteredRows = localRows.filter((row) =>
-    row.subjectName.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredRows = localRows.filter(row =>
+    (row.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (row.subjectId || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (row.code || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const visibleRowsCount = Math.max(MAX_VISIBLE, filteredRows.length);
-  const visibleRows = Array.from({ length: visibleRowsCount }, (_, i) => filteredRows[i] || null);
+  const visibleRows = Array.from(
+    { length: Math.max(MAX_VISIBLE, filteredRows.length) },
+    (_, i) => filteredRows[i] || null
+  );
 
   return (
-    <div
-      className={styles.overlay}
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className={styles.modal}>
-        <div className={styles.header}>
-          <h2 style={{ textAlign: "center", flex: 1 }}>SUBJECTS</h2>
-          <div className={styles.headerRight}>
-            <button
-              className={`${styles.iconCircle} ${styles.searchBtn}`}
-              title="Search"
-              onClick={handleSearchToggle}
-            >
-              🔍
-            </button>
-            <button className={`${styles.iconCircle} ${styles.closeBtn}`} onClick={onClose} title="Close">
-              ✕
-            </button>
-          </div>
-        </div>
+    <>
+      <div
+        className={styles.overlay}
+        onMouseDown={(e) => {
+          if (e.target === e.currentTarget) handleClose();
+        }}
+      >
+        <div className={styles.modal}>
 
-        {mode === "search" && (
-          <div className={styles.searchRow}>
+          {/* HEADER */}
+          <div className={styles.header}>
+            <h2 style={{ flex: 1, textAlign: "center" }}>SUBJECTS</h2>
+
+            <div className={styles.headerRight}>
+              <button onClick={() => setMode(m => m === "search" ? "" : "search")}>🔍</button>
+              <button onClick={handleClose}>✕</button>
+            </div>
+          </div>
+
+          {mode === "search" && (
             <input
               className={styles.input}
-              placeholder="Search subject..."
+              placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-          </div>
-        )}
+          )}
 
-        <div className={styles.tableWrapper}>
-          <div className={styles.tableHead}>
-            <div>Subject Name</div>
-            <div>Group</div>
-            <div>Session</div>
-            <div>Weekly Load</div>
-            <div>Course Type</div>
-            <div>Mergeable?</div>
-            <div></div>
-          </div>
+          {/* TABLE */}
+          <div className={styles.tableWrapper}>
+            <div className={styles.tableHead}>
+              <div>Sr</div>
+              <div>Subject ID</div>
+              <div>Name</div>
+              <div>Code</div>
+              <div>Lab</div>
+              <div>Actions</div>
+              <div>Delete</div>
+            </div>
 
-          <div className={styles.tableBody}>
-            {visibleRows.map((row, idx) => (
-              <div className={styles.tableRow} key={idx}>
-                <div>{row ? row.subjectName : "—"}</div>
-                <div>{row ? row.group : "—"}</div>
-                <div>{row ? row.session : "—"}</div>
-                <div>{row ? row.weeklyLoad : "—"}</div>
-                <div>{row ? row.courseType : "—"}</div>
-                <div>{row ? (row.isMergeable ? "Yes" : "No") : "—"}</div>
-                <div>
-                  {row ? (
-                    <>
-                      <img
-                        src="/edit.png"
-                        alt="Edit"
-                        className={styles.icon}
-                        onClick={() => startEdit(idx)}
-                      />
-                      <img
-                        src="/trash.png"
-                        alt="Delete"
-                        className={styles.icon}
-                        onClick={() => deleteRow(idx)}
-                      />
-                    </>
-                  ) : (
-                    <img
-                      src="/img1.png"
-                      alt="Add"
-                      className={styles.icon}
-                      onClick={startAdd}
-                    />
-                  )}
+            <div className={styles.tableBody}>
+              {visibleRows.map((row, idx) => (
+                <div className={styles.tableRow} key={idx}>
+                  <div>{row ? row.sr : idx + 1}</div>
+                  <div>{row ? row.subjectId : "—"}</div>
+                  <div>{row ? row.name : "—"}</div>
+                  <div>{row ? row.code : "—"}</div>
+                  <div>{row ? row.isLab : "—"}</div>
+
+                  <div>
+                    {row ? (
+                      <img src="/edit.png" className={styles.icon} onClick={() => startEdit(idx)} />
+                    ) : (
+                      <img src="/img1.png" className={styles.icon} onClick={startAdd} />
+                    )}
+                  </div>
+
+                  <div>
+                    {row && (
+                      <img src="/trash.png" className={styles.icon} onClick={() => deleteRow(idx)} />
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
 
-        {(mode === "add" || mode === "edit") && (
-          <div className={styles.editRow}>
-            <input
-              className={styles.input}
-              placeholder="Subject Name"
-              value={form.subjectName}
-              onChange={(e) => setForm({ ...form, subjectName: e.target.value })}
-            />
-            <select
-              className={styles.input}
-              value={form.group}
-              onChange={(e) => setForm({ ...form, group: e.target.value })}
-            >
-              <option value="">Select Group</option>
-              {(groups || []).map((g, i) => (
-                <option key={i} value={g.groupName}>{g.groupName}</option>
-              ))}
-            </select>
-            <select
-              className={styles.input}
-              value={form.session}
-              onChange={(e) => setForm({ ...form, session: e.target.value })}
-            >
-              <option value="">Select Session</option>
-              {(sessions || []).map((s, i) => (
-                <option key={i} value={s.year}>{s.year}</option>
-              ))}
-            </select>
-            <input
-              className={styles.input}
-              placeholder="Weekly Lecture Load"
-              type="number"
-              value={form.weeklyLoad}
-              onChange={(e) => setForm({ ...form, weeklyLoad: e.target.value })}
-            />
-            <select
-              className={styles.input}
-              value={form.courseType}
-              onChange={(e) => setForm({ ...form, courseType: e.target.value })}
-            >
-              <option value="">Select Course Type</option>
-              <option value="Lab">Lab</option>
-              <option value="Theory">Theory</option>
-            </select>
-            <label>
+          {/* EDIT ROW */}
+          {(mode === "add" || mode === "edit") && (
+            <div className={styles.editRow}>
+
               <input
-                type="checkbox"
-                checked={form.isMergeable}
-                onChange={(e) => setForm({ ...form, isMergeable: e.target.checked })}
-              /> Is Mergeable
-            </label>
-            <button onClick={saveRow}>Save</button>
-            <button onClick={() => setMode("")}>Cancel</button>
-          </div>
-        )}
+                className={styles.input}
+                placeholder="Subject ID"
+                value={form.subjectId}
+                onChange={(e) =>
+                  setForm({ ...form, subjectId: e.target.value })
+                }
+              />
 
-        {error && <div className={styles.error}>{error}</div>}
+              <input
+                className={styles.input}
+                placeholder="Subject Name"
+                value={form.name}
+                onChange={(e) =>
+                  setForm({ ...form, name: e.target.value })
+                }
+              />
 
-        <div className={styles.actions}>
-          <div className={styles.leftActions}>
-            <button onClick={startAdd}>Add</button>
-            <button onClick={resetAll}>Reset</button>
-            <button onClick={handleSaveForNow}>Save for now</button>
+              <input
+                className={styles.input}
+                placeholder="Code"
+                value={form.code}
+                onChange={(e) =>
+                  setForm({ ...form, code: e.target.value })
+                }
+              />
+
+              <select
+                className={styles.input}
+                value={form.isLab}
+                onChange={(e) =>
+                  setForm({ ...form, isLab: e.target.value })
+                }
+              >
+                <option value="">Is Lab?</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+
+              <button onClick={saveRow}>Save</button>
+              <button onClick={() => setMode("")}>Cancel</button>
+            </div>
+          )}
+
+          {error && <div className={styles.error}>{error}</div>}
+
+          {/* ACTIONS */}
+          <div className={styles.actions}>
+            <div className={styles.leftActions}>
+              <button onClick={startAdd}>Add</button>
+              <button onClick={resetAll}>Reset</button>
+              <button onClick={handleSaveForNow}>Save for now</button>
+            </div>
+
+            <div className={styles.rightActions}>
+              <button className={styles.submitBtn} onClick={handleSubmit}>
+                Submit
+              </button>
+            </div>
           </div>
 
-          <div className={styles.rightActions}>
-            <button className={styles.submitBtn} onClick={handleSubmit}>Submit</button>
-          </div>
         </div>
       </div>
-    </div>
+
+      {showConfirm && (
+        <ConfirmModal
+          message="This will delete all subjects and subsequent table. Continue?"
+          onConfirm={confirmReset}
+          onCancel={() => setShowConfirm(false)}
+        />
+      )}
+    </>
   );
 }

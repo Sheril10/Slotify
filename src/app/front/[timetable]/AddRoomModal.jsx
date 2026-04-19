@@ -1,42 +1,63 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "./addRoom.module.css";
+import ConfirmModal from "./ConfirmModal";
+import SubjectPickerModal from "./SubjectPickerModal";
 
-export default function AddRoomModal({ onClose, onSubmit, rooms, setRooms }) {
+export default function AddRoomModal({
+  onClose,
+  onSubmit,
+  rooms,
+  setRooms,
+  subjects,
+}) {
   const [localRows, setLocalRows] = useState(() =>
-    rooms && rooms.length ? rooms.map(r => ({ ...r })) : []
+    rooms?.length ? rooms.map((r) => ({ ...r })) : []
   );
+
+  // ✅ SEARCH STATE (toggle like teacher modal)
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
 
   const [mode, setMode] = useState("");
   const [editingIndex, setEditingIndex] = useState(null);
-  const [form, setForm] = useState({
+
+  const emptyForm = {
+    sr: "",
+    roomId: "",
     block: "",
     roomNumber: "",
-    capacityText: "Small",
-    capacityNum: "",
-    isLab: false,
-  });
+    capacity: "",
+    isLab: "No",
+    isFixed: "No",
+    fixedSubjects: [],
+  };
+
+  const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const MAX_VISIBLE = 5;
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [showSubjectSelector, setShowSubjectSelector] = useState(false);
+
+  const MAX_VISIBLE = 3;
 
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
+    return () => (document.body.style.overflow = prev);
   }, []);
+
+  const handleClose = () => {
+    onSubmit(localRows);
+    onClose();
+  };
 
   const startAdd = () => {
     setMode("add");
+    setEditingIndex(localRows.length);
     setForm({
-      block: "",
-      roomNumber: "",
-      capacityText: "Small",
-      capacityNum: "",
-      isLab: false,
+      ...emptyForm,
+      sr: (localRows.length + 1).toString(),
     });
     setError("");
   };
@@ -44,45 +65,51 @@ export default function AddRoomModal({ onClose, onSubmit, rooms, setRooms }) {
   const startEdit = (index) => {
     setMode("edit");
     setEditingIndex(index);
-    const r = localRows[index];
-    setForm({ ...r });
+    setForm(localRows[index]);
     setError("");
   };
 
   const saveRow = () => {
-    const { block, roomNumber, capacityText, capacityNum } = form;
-    if (!block.trim() || !roomNumber || !capacityText || !capacityNum) {
-      setError("⚠ Please fill all required fields.");
-      return;
-    }
+    if (!form.roomId.trim()) return setError("Room ID required");
+    if (!form.block.trim()) return setError("Block required");
+    if (!form.roomNumber.trim()) return setError("Room number required");
+
+    if (form.isFixed === "Yes" && form.fixedSubjects.length === 0)
+      return setError("Select subjects for fixed room");
 
     const updated = [...localRows];
-    if (mode === "edit" && editingIndex !== null) {
+
+    if (mode === "edit") {
       updated[editingIndex] = form;
     } else {
-      updated.push(form);
+      updated.push({
+        ...form,
+        sr: (updated.length + 1).toString(),
+      });
     }
-    setLocalRows(updated);
+
+    const normalized = updated.map((r, i) => ({
+      ...r,
+      sr: (i + 1).toString(),
+    }));
+
+    setLocalRows(normalized);
     setMode("");
-    setForm({
-      block: "",
-      roomNumber: "",
-      capacityText: "Small",
-      capacityNum: "",
-      isLab: false,
-    });
+    setForm(emptyForm);
+    setError("");
   };
 
-  const deleteRow = (index) => {
-    const updated = localRows.filter((_, i) => i !== index);
+  const deleteRow = (i) => {
+    const updated = localRows
+      .filter((_, idx) => idx !== i)
+      .map((r, j) => ({ ...r, sr: (j + 1).toString() }));
+
     setLocalRows(updated);
+    if (!updated.length) setRooms([]);
   };
 
   const handleSubmit = () => {
-    if (localRows.length === 0) {
-      setError("⚠ Please add at least one room before submitting.");
-      return;
-    }
+    if (!localRows.length) return setError("Add at least one room");
     setRooms(localRows);
     onSubmit(localRows);
   };
@@ -92,170 +119,234 @@ export default function AddRoomModal({ onClose, onSubmit, rooms, setRooms }) {
     onClose();
   };
 
-  const resetAll = () => {
-    setLocalRows([]);
-    setForm({
-      block: "",
-      roomNumber: "",
-      capacityText: "Small",
-      capacityNum: "",
-      isLab: false,
-    });
-    setError("");
-  };
+  // ✅ MULTI-FIELD SEARCH (FIXED)
+  const filteredRows = localRows.filter((row) => {
+    const q = searchQuery.toLowerCase();
 
-  const handleSearchToggle = () => {
-    setMode((m) => (m === "search" ? "" : "search"));
-    setSearchQuery("");
-  };
+    return (
+      (row.roomId || "").toLowerCase().includes(q) ||
+      (row.block || "").toLowerCase().includes(q) ||
+      (row.roomNumber || "").toLowerCase().includes(q)
+    );
+  });
 
-  const filteredRows = localRows.filter((row) =>
-    row.block.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    row.roomNumber.toLowerCase().includes(searchQuery.toLowerCase())
+  const visibleRows = Array.from(
+    { length: Math.max(MAX_VISIBLE, filteredRows.length) },
+    (_, i) => filteredRows[i] || null
   );
 
-  const visibleRowsCount = Math.max(MAX_VISIBLE, filteredRows.length);
-  const visibleRows = Array.from({ length: visibleRowsCount }, (_, i) => filteredRows[i] || null);
-
   return (
-    <div
-      className={styles.overlay}
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className={styles.modal}>
-        <div className={styles.header}>
-          <h2 style={{ textAlign: "center", flex: 1 }}>ROOMS</h2>
-          <div className={styles.headerRight}>
-            <button
-              className={`${styles.iconCircle} ${styles.searchBtn}`}
-              title="Search"
-              onClick={handleSearchToggle}
-            >
-              🔍
-            </button>
-            <button className={`${styles.iconCircle} ${styles.closeBtn}`} onClick={onClose} title="Close">
-              ✕
-            </button>
-          </div>
-        </div>
+    <>
+      <div
+        className={styles.overlay}
+        onMouseDown={(e) => {
+          if (e.target === e.currentTarget) handleClose();
+        }}
+      >
+        <div className={styles.modal}>
+          {/* HEADER */}
+          <div className={styles.header}>
+            <h2>ROOMS</h2>
 
-        {mode === "search" && (
-          <div className={styles.searchRow}>
+            <div>
+              {/* ✅ SEARCH TOGGLE BUTTON */}
+              <button onClick={() => setShowSearch((p) => !p)}>
+                🔍
+              </button>
+
+              <button onClick={handleClose}>✕</button>
+            </div>
+          </div>
+
+          {/* ✅ SEARCH INPUT (ONLY WHEN TOGGLED) */}
+          {showSearch && (
             <input
               className={styles.input}
-              placeholder="Search block or room..."
+              placeholder="Search by ID, Block, Room Number..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-          </div>
-        )}
+          )}
 
-        <div className={styles.tableWrapper}>
-          <div className={styles.tableHead}>
-            <div>Block</div>
-            <div>Room #</div>
-            <div>Capacity</div>
-            <div>Capacity #</div>
-            <div>Is Lab</div>
-            <div></div>
-          </div>
+          {/* TABLE */}
+          <div className={styles.tableWrapper}>
+            <div className={styles.tableHead}>
+              <div>Sr</div>
+              <div>ID</div>
+              <div>Block</div>
+              <div>Room</div>
+              <div>Cap</div>
+              <div>Subjects</div>
+              <div>Actions</div>
+              <div>Del</div>
+            </div>
 
-          <div className={styles.tableBody}>
-            {visibleRows.map((row, idx) => (
-              <div className={styles.tableRow} key={idx}>
-                <div>{row ? row.block : "—"}</div>
-                <div>{row ? row.roomNumber : "—"}</div>
-                <div>{row ? row.capacityText : "—"}</div>
-                <div>{row ? row.capacityNum : "—"}</div>
-                <div>{row ? (row.isLab ? "Yes" : "No") : "—"}</div>
-                <div>
-                  {row ? (
-                    <>
+            <div className={styles.tableBody}>
+              {visibleRows.map((row, idx) => (
+                <div className={styles.tableRow} key={idx}>
+                  <div>{row ? row.sr : idx + 1}</div>
+                  <div>{row?.roomId || "—"}</div>
+                  <div>{row?.block || "—"}</div>
+                  <div>{row?.roomNumber || "—"}</div>
+                  <div>{row?.capacity || "—"}</div>
+
+                  <div className={styles.subjectList}>
+                    {row?.fixedSubjects?.map((id) => {
+                      const sub = subjects.find((s) => s.id === id);
+                      return (
+                        <span key={id} className={styles.subjectItem}>
+                          {sub?.name}
+                        </span>
+                      );
+                    })}
+                  </div>
+
+                  <div>
+                    {row ? (
                       <img
                         src="/edit.png"
-                        alt="Edit"
                         className={styles.icon}
                         onClick={() => startEdit(idx)}
                       />
+                    ) : (
+                      <img
+                        src="/img1.png"
+                        className={styles.icon}
+                        onClick={startAdd}
+                      />
+                    )}
+                  </div>
+
+                  <div>
+                    {row && (
                       <img
                         src="/trash.png"
-                        alt="Delete"
                         className={styles.icon}
                         onClick={() => deleteRow(idx)}
                       />
-                    </>
-                  ) : (
-                    <img
-                      src="/img1.png"
-                      alt="Add"
-                      className={styles.icon}
-                      onClick={startAdd}
-                    />
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
 
-        {(mode === "add" || mode === "edit") && (
-          <div className={styles.editRow}>
-            <input
-              className={styles.input}
-              placeholder="Block Name"
-              value={form.block}
-              onChange={(e) => setForm({ ...form, block: e.target.value })}
-            />
-            <input
-              className={styles.input}
-              placeholder="Room Number"
-              value={form.roomNumber}
-              onChange={(e) => setForm({ ...form, roomNumber: e.target.value })}
-            />
-            <select
-              className={styles.input}
-              value={form.capacityText}
-              onChange={(e) => setForm({ ...form, capacityText: e.target.value })}
-            >
-              <option value="Small">Small</option>
-              <option value="Medium">Medium</option>
-              <option value="Large">Large</option>
-            </select>
-            <input
-              className={styles.input}
-              placeholder="Capacity (number)"
-              type="number"
-              value={form.capacityNum}
-              onChange={(e) => setForm({ ...form, capacityNum: e.target.value })}
-            />
-            <label>
+          {/* FORM */}
+          {(mode === "add" || mode === "edit") && (
+            <div className={styles.editRow}>
               <input
-                type="checkbox"
-                checked={form.isLab}
-                onChange={(e) => setForm({ ...form, isLab: e.target.checked })}
-              /> Is Lab
-            </label>
-            <button onClick={saveRow}>Save</button>
-            <button onClick={() => setMode("")}>Cancel</button>
-          </div>
-        )}
+                className={styles.input}
+                placeholder="Room ID"
+                value={form.roomId}
+                onChange={(e) =>
+                  setForm({ ...form, roomId: e.target.value })
+                }
+              />
 
-        {error && <div className={styles.error}>{error}</div>}
+              <input
+                className={styles.input}
+                placeholder="Block"
+                value={form.block}
+                onChange={(e) =>
+                  setForm({ ...form, block: e.target.value })
+                }
+              />
 
-        <div className={styles.actions}>
-          <div className={styles.leftActions}>
-            <button onClick={startAdd}>Add</button>
-            <button onClick={resetAll}>Reset</button>
-            <button onClick={handleSaveForNow}>Save for now</button>
-          </div>
+              <input
+                className={styles.input}
+                placeholder="Room Number"
+                value={form.roomNumber}
+                onChange={(e) =>
+                  setForm({ ...form, roomNumber: e.target.value })
+                }
+              />
 
-          <div className={styles.rightActions}>
-            <button className={styles.submitBtn} onClick={handleSubmit}>Submit</button>
+              <input
+                className={styles.input}
+                placeholder="Capacity"
+                value={form.capacity}
+                onChange={(e) =>
+                  setForm({ ...form, capacity: e.target.value })
+                }
+              />
+              <p>is Fixed?</p>
+              <select
+                className={styles.input}
+                value={form.isFixed}
+                onChange={(e) =>
+                  setForm({ ...form, isFixed: e.target.value })
+                }
+              >
+                <option value="No">No</option>
+                <option value="Yes">Yes</option>
+              </select>
+
+              {form.isFixed === "Yes" && (
+                <>
+                  <button onClick={() => setShowSubjectSelector(true)}>
+                    Select Subjects ({form.fixedSubjects.length})
+                  </button>
+
+                  <div className={styles.subjectBox}>
+                    {form.fixedSubjects.map((id) => {
+                      const sub = subjects.find((s) => s.id === id);
+                      return (
+                        <span key={id} className={styles.subjectItem}>
+                          {sub?.name}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+
+              <button onClick={saveRow}>Save</button>
+              <button onClick={() => setMode("")}>Cancel</button>
+            </div>
+          )}
+
+          {error && <div className={styles.error}>{error}</div>}
+
+          {/* ACTIONS */}
+          <div className={styles.actions}>
+            <div className={styles.leftActions}>
+              <button onClick={startAdd}>Add</button>
+              <button onClick={() => setShowConfirm(true)}>Reset</button>
+              <button onClick={handleSaveForNow}>Save for now</button>
+            </div>
+
+            <div className={styles.rightActions}>
+              <button className={styles.submitBtn} onClick={handleSubmit}>
+                Submit
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* MODALS */}
+      {showSubjectSelector && (
+        <SubjectPickerModal
+          subjects={subjects}
+          selectedSubjects={form.fixedSubjects}
+          setSelectedSubjects={(subs) =>
+            setForm({ ...form, fixedSubjects: subs })
+          }
+          onClose={() => setShowSubjectSelector(false)}
+        />
+      )}
+
+      {showConfirm && (
+        <ConfirmModal
+          message="Delete all rooms?"
+          onConfirm={() => {
+            setLocalRows([]);
+            setRooms([]);
+            setShowConfirm(false);
+          }}
+          onCancel={() => setShowConfirm(false)}
+        />
+      )}
+    </>
   );
 }

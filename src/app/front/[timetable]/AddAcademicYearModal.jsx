@@ -1,22 +1,29 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import styles from "./addSession.module.css";
+import styles from "./ayear.module.css";
 import ConfirmModal from "./ConfirmModal";
 
-export default function AddSessionModal({ onClose, onSubmit, sessions, setSessions }) {
+export default function AddAcademicYearModal({
+  onClose,
+  onSubmit,
+  academicYears,
+  setAcademicYears,
+  sessions,
+}) {
   const [localRows, setLocalRows] = useState(() =>
-    sessions?.length ? sessions.map(r => ({ ...r })) : []
+    academicYears?.length ? academicYears.map(r => ({ ...r })) : []
   );
 
   const [mode, setMode] = useState("");
   const [editingIndex, setEditingIndex] = useState(null);
 
-  // ✅ UPDATED FORM
+  // ✅ FIXED FORM (same pattern as session modal)
   const [form, setForm] = useState({
     sr: "",
-    sessionId: "",
-    year: ""
+    academicId: "",
+    name: "",
+    session: ""
   });
 
   const [error, setError] = useState("");
@@ -33,19 +40,20 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
 
   // ================= CLOSE =================
   const handleClose = () => {
-    setSessions(localRows);
+    setAcademicYears(localRows);
     onClose();
   };
 
-  // ================= CRUD =================
+  // ================= ADD =================
   const startAdd = () => {
     setMode("add");
     setEditingIndex(localRows.length);
 
     setForm({
       sr: (localRows.length + 1).toString(),
-      sessionId: "",
-      year: ""
+      academicId: "",
+      name: "",
+      session: ""
     });
 
     setError("");
@@ -57,13 +65,15 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
 
     setForm({
       sr: (index + 1).toString(),
-      sessionId: "",
-      year: ""
+      academicId: "",
+      name: "",
+      session: ""
     });
 
     setError("");
   };
 
+  // ================= EDIT =================
   const startEdit = (index) => {
     setMode("edit");
     setEditingIndex(index);
@@ -73,13 +83,18 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
 
   // ================= SAVE =================
   const saveRow = () => {
-    if (!form.sessionId.trim()) {
-      setError("Session ID is required");
+    if (!form.academicId.trim()) {
+      setError("Academic Year ID is required");
       return;
     }
 
-    if (!form.year.trim()) {
-      setError("Session name is required");
+    if (!form.name.trim()) {
+      setError("Academic Year Name is required");
+      return;
+    }
+
+    if (!form.session) {
+      setError("Select a session");
       return;
     }
 
@@ -102,7 +117,7 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
     setLocalRows(normalized);
     setMode("");
     setEditingIndex(null);
-    setForm({ sr: "", sessionId: "", year: "" });
+    setForm({ sr: "", academicId: "", name: "", session: "" });
     setError("");
   };
 
@@ -115,7 +130,7 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
     setLocalRows(updated);
 
     if (updated.length === 0) {
-      setSessions([]);
+      setAcademicYears([]);
     }
   };
 
@@ -123,36 +138,37 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
   const resetAll = () => setShowConfirm(true);
 
   const confirmReset = () => {
-    setLocalRows([]);
-    setSessions([]);
-    setShowConfirm(false);
-  };
+  setLocalRows([]);
+  setAcademicYears([]);
+
+  setShowConfirm(false);
+
+  // ✅ reset UI state so modal doesn't bug out
+  setMode("");
+  setEditingIndex(null);
+};
 
   // ================= SUBMIT =================
   const handleSubmit = () => {
     if (localRows.length === 0) {
-      setError("Add at least one entry before submitting");
+      setError("Add at least one academic year");
       return;
     }
 
-    setSessions(localRows);
+    setAcademicYears(localRows);
     onSubmit(localRows);
   };
 
   const handleSaveForNow = () => {
-    setSessions(localRows);
+    setAcademicYears(localRows);
     onClose();
   };
 
   // ================= SEARCH =================
-  const handleSearchToggle = () => {
-    setMode(m => (m === "search" ? "" : "search"));
-    setSearchQuery("");
-  };
-
   const filteredRows = localRows.filter(row =>
-    row.year.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    row.sessionId.toLowerCase().includes(searchQuery.toLowerCase())
+    row.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    row.session.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    row.academicId.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const visibleRows = Array.from(
@@ -172,10 +188,12 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
 
           {/* HEADER */}
           <div className={styles.header}>
-            <h2 style={{ flex: 1, textAlign: "center" }}>SESSIONS</h2>
+            <h2 style={{ flex: 1, textAlign: "center" }}>
+              ACADEMIC YEARS
+            </h2>
 
             <div className={styles.headerRight}>
-              <button onClick={handleSearchToggle}>🔍</button>
+              <button onClick={() => setMode(m => m === "search" ? "" : "search")}>🔍</button>
               <button onClick={handleClose}>✕</button>
             </div>
           </div>
@@ -193,68 +211,78 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
           {/* TABLE */}
           <div className={styles.tableWrapper}>
             <div className={styles.tableHead}>
-              <div>Sr No.</div>
-              <div>Session ID</div>
-              <div>Session Name</div>
+              <div>Sr</div>
+              <div>Academic ID</div>
+              <div>Academic Year</div>
+              <div>Session</div>
               <div>Actions</div>
+              <div>Delete</div>
             </div>
 
             <div className={styles.tableBody}>
               {visibleRows.map((row, idx) => (
                 <div className={styles.tableRow} key={idx}>
+
                   <div>{row ? row.sr : idx + 1}</div>
-                  <div>{row ? row.sessionId : "—"}</div>
-                  <div>{row ? row.year : "—"}</div>
+                  <div>{row ? row.academicId : "—"}</div>
+                  <div>{row ? row.name : "—"}</div>
+                  <div>{row ? row.session : "—"}</div>
 
                   <div>
                     {row ? (
-                      <img
-                        src="/edit.png"
-                        className={styles.icon}
-                        onClick={() => startEdit(idx)}
-                      />
+                      <img src="/edit.png" className={styles.icon} onClick={() => startEdit(idx)} />
                     ) : (
-                      <img
-                        src="/img1.png"
-                        className={styles.icon}
-                        onClick={() => startAddAt(idx)}
-                      />
-                    )}
-
-                    {row && (
-                      <img
-                        src="/trash.png"
-                        className={styles.icon}
-                        onClick={() => deleteRow(idx)}
-                      />
+                      <img src="/img1.png" className={styles.icon} onClick={() => startAddAt(idx)} />
                     )}
                   </div>
+
+                  <div>
+                    {row && (
+                      <img src="/trash.png" className={styles.icon} onClick={() => deleteRow(idx)} />
+                    )}
+                  </div>
+
                 </div>
               ))}
             </div>
           </div>
 
-          {/* EDIT ROW */}
+          {/* EDIT FORM */}
           {(mode === "add" || mode === "edit") && (
             <div className={styles.editRow}>
 
               <input
                 className={styles.input}
-                placeholder="Session ID"
-                value={form.sessionId}
+                placeholder="Academic Year ID"
+                value={form.academicId}
                 onChange={(e) =>
-                  setForm({ ...form, sessionId: e.target.value })
+                  setForm({ ...form, academicId: e.target.value })
                 }
               />
 
               <input
                 className={styles.input}
-                placeholder="Session Name"
-                value={form.year}
+                placeholder="Academic Year Name"
+                value={form.name}
                 onChange={(e) =>
-                  setForm({ ...form, year: e.target.value })
+                  setForm({ ...form, name: e.target.value })
                 }
               />
+
+              <select
+                className={styles.input}
+                value={form.session}
+                onChange={(e) =>
+                  setForm({ ...form, session: e.target.value })
+                }
+              >
+                <option value="">Select Session</option>
+                {sessions.map((s, i) => (
+                  <option key={i} value={s.year}>
+                    {s.year}
+                  </option>
+                ))}
+              </select>
 
               <button onClick={saveRow}>Save</button>
               <button onClick={() => setMode("")}>Cancel</button>
@@ -283,7 +311,7 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
 
       {showConfirm && (
         <ConfirmModal
-          message="This will delete all sessions and dependent data. Continue?"
+          message="This will delete all academic years and dependent data. Continue?"
           onConfirm={confirmReset}
           onCancel={() => setShowConfirm(false)}
         />

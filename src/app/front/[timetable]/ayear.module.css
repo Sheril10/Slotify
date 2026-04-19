@@ -65,6 +65,17 @@
   transform: scale(1.1);
 }
 
+.searchBtn {
+  background: #b3ecff; /* Sky blue */
+  color: #004466;
+}
+
+.closeBtn {
+  background: #ffcccc; /* Light red */
+  color: #b30000;
+  font-weight: 700;
+}
+
 /* =====================
    Table
 ===================== */
@@ -74,19 +85,8 @@
   flex-direction: column;
 }
 
-/* ✅ FIXED HEADER GRID */
-.tableHead {
-  display: grid;
-  grid-template-columns: 0.6fr 1fr 2fr 0.6fr 0.6fr;
-  font-weight: 700;
-  padding: 10px 0;
-  border-bottom: 2px solid #eee;
-  gap: 10px;
-}
 
-/* =====================
-   TABLE BODY
-===================== */
+
 .tableBody {
   max-height: 160px;
   overflow-y: auto;
@@ -102,28 +102,7 @@
   scrollbar-width: none;
 }
 
-/* ✅ FIXED ROW GRID */
-.tableRow {
-  display: grid;
-  grid-template-columns: 0.6fr 1fr 2fr 0.6fr 0.6fr;
-  align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid #f1f1f1;
-  font-size: 1rem;
-  gap: 10px;
-}
 
-/* Prevent text squishing */
-.tableRow div,
-.tableHead div {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* =====================
-   Icons
-===================== */
 .icon {
   width: 22px;
   height: 22px;
@@ -141,11 +120,11 @@
 ===================== */
 .editRow {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   margin-top: 14px;
   align-items: center;
+  flex-wrap: wrap;
 }
-
 .input {
   flex: 1;
   padding: 10px;
@@ -166,13 +145,6 @@
   gap: 10px;
 }
 
-.leftActions {
-  display: flex;
-  gap: 20px;
-  justify-content: flex-start;
-  flex-wrap: wrap;
-}
-
 .leftActions button,
 .rightActions button {
   padding: 10px 16px;
@@ -186,29 +158,36 @@
   transition: transform 0.2s ease, background-color 0.3s ease;
 }
 
+.leftActions {
+  display: flex;
+  gap: 20px; /* increased spacing between buttons */
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
 .leftActions button:hover,
 .rightActions button:hover {
   transform: scale(1.05);
 }
 
-/* Button Colors */
+/* Color-coded buttons */
 .leftActions button:nth-child(1) {
-  background: #66b3ff;
+  background: #66b3ff; /* Light Blue - Add/Edit */
 }
 
 .leftActions button:nth-child(2) {
-  background: #ff7b7b;
+  background: #ff7b7b; /* Light Red - Delete */
 }
 
 .leftActions button:nth-child(3) {
-  background: #ffd166;
+  background: #ffd166; /* Light Yellow - Save for now */
   color: #222;
 }
 
 .submitBtn {
-  background: #90ee90;
+  background: #90ee90; /* Light Green - Submit */
   color: #1a1a1a;
 }
+
 
 /* =====================
    Error Message
@@ -218,4 +197,23 @@
   margin-top: 10px;
   font-weight: 500;
   font-size: 0.95rem;
+}
+
+.tableHead {
+  display: grid;
+  grid-template-columns: 0.7fr 1.2fr 2fr 2fr 0.6fr 0.6fr;
+  font-weight: 700;
+  padding: 8px 0;
+  border-bottom: 2px solid #eee;
+  gap: 10px;
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: 0.7fr 1.2fr 2fr 2fr 0.6fr 0.6fr;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f1f1;
+  font-size: 1rem;
+  gap: 10px;
 }

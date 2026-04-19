@@ -178,8 +178,13 @@
 }
 
 .addIcon {
-  width: 75px;
-  height: 75px;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+}
+.addIcon1 {
+  width: 200px;
+  height: 200px;
   border-radius: 10px;
 }
 
@@ -328,99 +333,4 @@
 .trashIcon:hover {
   opacity: 1;
   transform: scale(1.15);
-}
-
-/* ================================
-   Progress Overview Modal Styles
-================================ */
-.progressModal {
-  background: #fff;
-  border-radius: 20px;
-  padding: 2rem;
-  width: 80%;
-  max-width: 900px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-  display: flex;
-  flex-direction: column;
-  color: #1b1c64;
-}
-
-.modalHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 2px solid #e5e7eb;
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-}
-
-.closeBtn {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: #1b1c64;
-}
-
-.progressContent {
-  overflow-y: auto;
-  max-height: 70vh;
-}
-
-.sectionBlock {
-  margin-bottom: 1.2rem;
-  border-radius: 12px;
-  background: #f8fbff;
-  padding: 1rem;
-}
-
-.sectionHeader {
-  display: flex;
-  justify-content: space-between;
-  font-size: 1.3rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.arrow {
-  font-size: 1.2rem;
-  color: #555;
-}
-
-.tableContainer {
-  margin-top: 0.8rem;
-  overflow-x: auto;
-}
-
-.overviewTable {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 1rem;
-}
-
-.overviewTable th,
-.overviewTable td {
-  border: 1px solid #dbe2f0;
-  padding: 0.6rem 1rem;
-  text-align: left;
-}
-
-.overviewTable th {
-  background-color: #e6f1ff;
-  font-weight: 700;
-}
-
-.overviewTable tr:nth-child(even) {
-  background-color: #f9fbff;
-}
-
-.disabledSubmit {
-  opacity: 0.4;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-.activeSubmit {
-  opacity: 1;
-  cursor: pointer;
 }

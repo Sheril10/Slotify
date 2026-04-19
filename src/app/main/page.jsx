@@ -102,7 +102,7 @@ export default function Main() {
 
   return (
     <div className={styles.container}>
-      <img
+      
         src="/ChatGPT%20Image%20Sep%2013%2C%202025%2C%2004_46_17%20AM.png"
         alt="logo"
         className={styles.logo}

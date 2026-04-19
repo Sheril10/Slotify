@@ -1,6 +1,3 @@
-/* =====================
-   Overlay and Modal
-===================== */
 .overlay {
   position: fixed;
   inset: 0;
@@ -12,22 +9,18 @@
 }
 
 .modal {
-  width: 640px;
+  width: 750px;
   max-width: calc(100% - 32px);
   max-height: 90vh;
   background: #fff;
   border-radius: 12px;
   padding: 20px;
-  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
 }
 
-/* =====================
-   Header
-===================== */
+/* HEADER */
 .header {
   display: flex;
   justify-content: space-between;
@@ -35,180 +28,105 @@
 }
 
 .header h2 {
+  flex: 1;
   text-align: center;
   font-weight: 700;
-  color: #222;
-  flex: 1;
 }
 
-.headerRight {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-/* Circular icon buttons */
-.iconCircle {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-}
-
-.iconCircle:hover {
-  transform: scale(1.1);
-}
-
-.searchBtn {
-  background: #b3ecff; /* Sky blue */
-  color: #004466;
-}
-
-.closeBtn {
-  background: #ffcccc; /* Light red */
-  color: #b30000;
-  font-weight: 700;
-}
-
-/* =====================
-   Table
-===================== */
+/* TABLE */
 .tableWrapper {
   margin-top: 16px;
-  display: flex;
-  flex-direction: column;
+  overflow-x: auto;
+}
+
+.tableHead,
+.tableRow {
+  display: grid;
+  grid-template-columns: 0.6fr 1fr 1.5fr 1fr 0.8fr 0.6fr;
+  min-width: 700px;
+  gap: 10px;
+  padding: 10px 0;
 }
 
 .tableHead {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
   font-weight: 700;
-  padding: 8px 0;
   border-bottom: 2px solid #eee;
 }
 
-.tableBody {
-  max-height: 160px;
-  overflow-y: auto;
-  margin-top: 4px;
-}
-
-/* Hide scrollbar but allow scroll */
-.tableBody::-webkit-scrollbar {
-  display: none;
-}
-.tableBody {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
 .tableRow {
-  display: grid;
-  grid-template-columns: 1fr 2fr 40px 40px;
-  align-items: center;
-  padding: 8px 0;
   border-bottom: 1px solid #f1f1f1;
-  font-size: 1rem;
+  align-items: center;
+  font-size: 0.95rem;
+}
+
+.tableHead div,
+.tableRow div {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tableBody {
+  max-height: 180px;
+  overflow-y: auto;
 }
 
 .icon {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   cursor: pointer;
-  transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
-.icon:hover {
-  transform: scale(1.15);
-  opacity: 0.8;
-}
-
-/* =====================
-   Edit Row
-===================== */
+/* EDIT */
 .editRow {
   display: flex;
-  gap: 8px;
-  margin-top: 14px;
-  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
 }
 
 .input {
   flex: 1;
+  min-width: 150px;
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 6px;
-  font-size: 1rem;
 }
 
-/* =====================
-   Bottom Actions
-===================== */
+/* ACTIONS */
 .actions {
   display: flex;
   justify-content: space-between;
-  margin-top: 18px;
-  align-items: center;
+  margin-top: 15px;
   flex-wrap: wrap;
-  gap: 10px;
-}
-
-.leftActions button,
-.rightActions button {
-  padding: 10px 16px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-  font-family: "Poppins", sans-serif;
-  font-size: 1rem;
-  color: white;
-  transition: transform 0.2s ease, background-color 0.3s ease;
 }
 
 .leftActions {
   display: flex;
-  gap: 20px; /* increased spacing between buttons */
-  justify-content: flex-start;
-  flex-wrap: wrap;
-}
-.leftActions button:hover,
-.rightActions button:hover {
-  transform: scale(1.05);
+  gap: 15px;
 }
 
-/* Color-coded buttons */
-.leftActions button:nth-child(1) {
-  background: #66b3ff; /* Light Blue - Add/Edit */
+.leftActions button,
+.rightActions button {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  color: white;
+  font-weight: bold;
 }
 
-.leftActions button:nth-child(2) {
-  background: #ff7b7b; /* Light Red - Delete */
-}
-
-.leftActions button:nth-child(3) {
-  background: #ffd166; /* Light Yellow - Save for now */
-  color: #222;
-}
+.leftActions button:nth-child(1) { background:#66b3ff; }
+.leftActions button:nth-child(2) { background:#ff7b7b; }
+.leftActions button:nth-child(3) { background:#ffd166; color:#222; }
 
 .submitBtn {
-  background: #90ee90; /* Light Green - Submit */
-  color: #1a1a1a;
+  background:#90ee90;
+  color:#ffffff;
 }
 
-
-/* =====================
-   Error Message
-===================== */
+/* ERROR */
 .error {
   color: #c00;
   margin-top: 10px;
-  font-weight: 500;
-  font-size: 0.95rem;
 }

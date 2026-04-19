@@ -1,27 +1,42 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import styles from "./addSession.module.css";
+import styles from "./addGroupSubject.module.css";
 import ConfirmModal from "./ConfirmModal";
+import DropdownPopup from "./DropdownPopup";
 
-export default function AddSessionModal({ onClose, onSubmit, sessions, setSessions }) {
+export default function AddGroupSubjectModal({
+  onClose,
+  onSubmit,
+  groupSubjects,
+  setGroupSubjects,
+  groups,
+  subjects,
+}) {
   const [localRows, setLocalRows] = useState(() =>
-    sessions?.length ? sessions.map(r => ({ ...r })) : []
+    groupSubjects?.length ? groupSubjects.map((r) => ({ ...r })) : []
   );
 
   const [mode, setMode] = useState("");
   const [editingIndex, setEditingIndex] = useState(null);
 
-  // ✅ UPDATED FORM
-  const [form, setForm] = useState({
+  const emptyForm = {
     sr: "",
-    sessionId: "",
-    year: ""
-  });
+    groupSubjectId: "",
+    group: "",
+    subject: "",
+    lecturesPerWeek: "",
+    labLecturesPerWeek: "",
+  };
+
+  const [form, setForm] = useState(emptyForm);
 
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
+
+  const [showGroupPopup, setShowGroupPopup] = useState(false);
+  const [showSubjectPopup, setShowSubjectPopup] = useState(false);
 
   const MAX_VISIBLE = 3;
 
@@ -33,34 +48,18 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
 
   // ================= CLOSE =================
   const handleClose = () => {
-    setSessions(localRows);
+    setGroupSubjects(localRows);
     onClose();
   };
 
-  // ================= CRUD =================
+  // ================= ADD =================
   const startAdd = () => {
     setMode("add");
     setEditingIndex(localRows.length);
-
     setForm({
+      ...emptyForm,
       sr: (localRows.length + 1).toString(),
-      sessionId: "",
-      year: ""
     });
-
-    setError("");
-  };
-
-  const startAddAt = (index) => {
-    setMode("add");
-    setEditingIndex(index);
-
-    setForm({
-      sr: (index + 1).toString(),
-      sessionId: "",
-      year: ""
-    });
-
     setError("");
   };
 
@@ -73,15 +72,14 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
 
   // ================= SAVE =================
   const saveRow = () => {
-    if (!form.sessionId.trim()) {
-      setError("Session ID is required");
-      return;
-    }
-
-    if (!form.year.trim()) {
-      setError("Session name is required");
-      return;
-    }
+    if (!form.groupSubjectId.trim())
+      return setError("Group Subject ID required");
+    if (!form.group) return setError("Select Group");
+    if (!form.subject) return setError("Select Subject");
+    if (!form.lecturesPerWeek)
+      return setError("Lectures per week required");
+    if (!form.labLecturesPerWeek)
+      return setError("Lab lectures per week required");
 
     const updated = [...localRows];
 
@@ -102,7 +100,7 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
     setLocalRows(normalized);
     setMode("");
     setEditingIndex(null);
-    setForm({ sr: "", sessionId: "", year: "" });
+    setForm(emptyForm);
     setError("");
   };
 
@@ -113,10 +111,7 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
       .map((r, j) => ({ ...r, sr: (j + 1).toString() }));
 
     setLocalRows(updated);
-
-    if (updated.length === 0) {
-      setSessions([]);
-    }
+    if (updated.length === 0) setGroupSubjects([]);
   };
 
   // ================= RESET =================
@@ -124,35 +119,38 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
 
   const confirmReset = () => {
     setLocalRows([]);
-    setSessions([]);
+    setGroupSubjects([]);
     setShowConfirm(false);
+    setMode("");
+    setEditingIndex(null);
   };
 
   // ================= SUBMIT =================
   const handleSubmit = () => {
-    if (localRows.length === 0) {
-      setError("Add at least one entry before submitting");
-      return;
-    }
+    if (!localRows.length)
+      return setError("Add at least one group-subject mapping");
 
-    setSessions(localRows);
+    setGroupSubjects(localRows);
     onSubmit(localRows);
   };
 
   const handleSaveForNow = () => {
-    setSessions(localRows);
+    setGroupSubjects(localRows);
     onClose();
   };
 
-  // ================= SEARCH =================
-  const handleSearchToggle = () => {
-    setMode(m => (m === "search" ? "" : "search"));
-    setSearchQuery("");
-  };
-
-  const filteredRows = localRows.filter(row =>
-    row.year.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    row.sessionId.toLowerCase().includes(searchQuery.toLowerCase())
+  // ================= FILTER =================
+  const filteredRows = localRows.filter(
+    (row) =>
+      (row.groupSubjectId || "")
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      (row.group || "")
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      (row.subject || "")
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase())
   );
 
   const visibleRows = Array.from(
@@ -169,19 +167,23 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
         }}
       >
         <div className={styles.modal}>
-
           {/* HEADER */}
           <div className={styles.header}>
-            <h2 style={{ flex: 1, textAlign: "center" }}>SESSIONS</h2>
+            <h2>GROUP SUBJECTS</h2>
 
             <div className={styles.headerRight}>
-              <button onClick={handleSearchToggle}>🔍</button>
+              <button
+                onClick={() =>
+                  setSearchQuery((p) => (p ? "" : " "))
+                }
+              >
+                🔍
+              </button>
               <button onClick={handleClose}>✕</button>
             </div>
           </div>
 
-          {/* SEARCH */}
-          {mode === "search" && (
+          {searchQuery && (
             <input
               className={styles.input}
               placeholder="Search..."
@@ -193,18 +195,25 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
           {/* TABLE */}
           <div className={styles.tableWrapper}>
             <div className={styles.tableHead}>
-              <div>Sr No.</div>
-              <div>Session ID</div>
-              <div>Session Name</div>
+              <div>Sr</div>
+              <div>ID</div>
+              <div>Group</div>
+              <div>Subject</div>
+              <div>Lect/W (number)</div>
+              <div>Lab/W (number)</div>
               <div>Actions</div>
+              <div>Del</div>
             </div>
 
             <div className={styles.tableBody}>
               {visibleRows.map((row, idx) => (
                 <div className={styles.tableRow} key={idx}>
                   <div>{row ? row.sr : idx + 1}</div>
-                  <div>{row ? row.sessionId : "—"}</div>
-                  <div>{row ? row.year : "—"}</div>
+                  <div>{row ? row.groupSubjectId : "—"}</div>
+                  <div>{row ? row.group : "—"}</div>
+                  <div>{row ? row.subject : "—"}</div>
+                  <div>{row ? row.lecturesPerWeek : "—"}</div>
+                  <div>{row ? row.labLecturesPerWeek : "—"}</div>
 
                   <div>
                     {row ? (
@@ -217,10 +226,12 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
                       <img
                         src="/img1.png"
                         className={styles.icon}
-                        onClick={() => startAddAt(idx)}
+                        onClick={startAdd}
                       />
                     )}
+                  </div>
 
+                  <div>
                     {row && (
                       <img
                         src="/trash.png"
@@ -234,25 +245,56 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
             </div>
           </div>
 
-          {/* EDIT ROW */}
+          {/* EDIT FORM */}
           {(mode === "add" || mode === "edit") && (
             <div className={styles.editRow}>
+              <input
+                className={styles.input}
+                placeholder="Group Subject ID"
+                value={form.groupSubjectId}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    groupSubjectId: e.target.value,
+                  })
+                }
+              />
+
+              <button
+                className={styles.input}
+                onClick={() => setShowGroupPopup(true)}
+              >
+                {form.group || "Select Group"}
+              </button>
+
+              <button
+                className={styles.input}
+                onClick={() => setShowSubjectPopup(true)}
+              >
+                {form.subject || "Select Subject"}
+              </button>
 
               <input
                 className={styles.input}
-                placeholder="Session ID"
-                value={form.sessionId}
+                placeholder="Lectures / Week"
+                value={form.lecturesPerWeek}
                 onChange={(e) =>
-                  setForm({ ...form, sessionId: e.target.value })
+                  setForm({
+                    ...form,
+                    lecturesPerWeek: e.target.value,
+                  })
                 }
               />
 
               <input
                 className={styles.input}
-                placeholder="Session Name"
-                value={form.year}
+                placeholder="Lab Lectures / Week"
+                value={form.labLecturesPerWeek}
                 onChange={(e) =>
-                  setForm({ ...form, year: e.target.value })
+                  setForm({
+                    ...form,
+                    labLecturesPerWeek: e.target.value,
+                  })
                 }
               />
 
@@ -277,13 +319,44 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
               </button>
             </div>
           </div>
-
         </div>
       </div>
 
+      {/* GROUP POPUP */}
+{showGroupPopup && (
+  <DropdownPopup
+    title="Select Group"
+    options={groups.map((g, i) => ({
+      id: i,
+      name: g.groupName || g.name || g.group || "",
+    }))}
+    selected={form.group}
+    onSelect={(val) =>
+      setForm((prev) => ({ ...prev, group: val }))
+    }
+    onClose={() => setShowGroupPopup(false)}
+  />
+)}
+      {/* SUBJECT POPUP */}
+      {showSubjectPopup && (
+        <DropdownPopup
+          title="Select Subject"
+          options={subjects.map((s, i) => ({
+            id: i,
+            name: s.name,
+          }))}
+          selected={form.subject}
+          onSelect={(val) =>
+            setForm((prev) => ({ ...prev, subject: val }))
+          }
+          onClose={() => setShowSubjectPopup(false)}
+        />
+      )}
+
+      {/* CONFIRM */}
       {showConfirm && (
         <ConfirmModal
-          message="This will delete all sessions and dependent data. Continue?"
+          message="Delete all group-subject mappings?"
           onConfirm={confirmReset}
           onCancel={() => setShowConfirm(false)}
         />

@@ -1,0 +1,108 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modal {
+  width: 600px;
+  max-width: 90%;
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.closeBtn {
+  border: none;
+  background: #ffcccc;
+  padding: 6px 10px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.inputRow {
+  display: flex;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.inputRow input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.inputRow button {
+  padding: 10px 14px;
+  background: #66b3ff;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+}
+
+.table {
+  margin-top: 10px;
+}
+
+.tableHead,
+.tableRow {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  padding: 8px 0;
+  align-items: center;
+}
+
+.tableHead {
+  font-weight: bold;
+  border-bottom: 2px solid #eee;
+}
+
+.tableRow {
+  border-bottom: 1px solid #f1f1f1;
+}
+
+.tableRow button {
+  background: #ff7b7b;
+  border: none;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.actions {
+  margin-top: 15px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.actions button {
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.submit {
+  background: #90ee90;
+}
+
+.error {
+  color: red;
+  margin-top: 10px;
+}

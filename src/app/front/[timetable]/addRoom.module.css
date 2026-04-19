@@ -1,6 +1,3 @@
-/* =====================
-   Overlay and Modal
-===================== */
 .overlay {
   position: fixed;
   inset: 0;
@@ -11,207 +8,171 @@
   z-index: 9999;
 }
 
+/* MODAL */
 .modal {
-  width: 640px;
-  max-width: calc(100% - 32px);
+  width: 900px;
+  max-width: calc(100% - 24px);
   max-height: 90vh;
   background: #fff;
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 20px;
-  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
 }
 
-/* =====================
-   Header
-===================== */
+/* HEADER */
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
 }
 
 .header h2 {
-  text-align: center;
-  font-weight: 700;
-  color: #222;
   flex: 1;
+  text-align: center;
 }
 
-.headerRight {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-/* Circular icon buttons */
-.iconCircle {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-}
-
-.iconCircle:hover {
-  transform: scale(1.1);
-}
-
-.searchBtn {
-  background: #b3ecff; /* Sky blue */
-  color: #004466;
-}
-
-.closeBtn {
-  background: #ffcccc; /* Light red */
-  color: #b30000;
-  font-weight: 700;
-}
-
-/* =====================
-   Table
-===================== */
+/* TABLE */
 .tableWrapper {
-  margin-top: 16px;
-  display: flex;
-  flex-direction: column;
+  margin-top: 14px;
+  overflow: hidden; /* ❌ removed horizontal scroll */
+}
+
+.tableHead,
+.tableRow {
+  display: grid;
+  grid-template-columns:
+    0.5fr
+    1fr
+    1fr
+    1fr
+    0.8fr
+    2fr
+    60px
+    60px;
+
+  gap: 10px;
+  padding: 10px;
+  align-items: center;
 }
 
 .tableHead {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 60px; /* 5 data + 1 action */
-  font-weight: 700;
-  padding: 8px 0;
+  font-weight: bold;
   border-bottom: 2px solid #eee;
+  background: #fafafa;
 }
-
-.tableRow {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 60px; /* match header */
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid #f1f1f1;
-  font-size: 1rem;
-}
-
 
 .tableBody {
-  max-height: 160px;
+  max-height: 220px;
   overflow-y: auto;
-  margin-top: 4px;
 }
 
-/* Hide scrollbar but allow scroll */
-.tableBody::-webkit-scrollbar {
-  display: none;
-}
-.tableBody {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+/* ROW */
+.tableRow {
+  border-bottom: 1px solid #eee;
 }
 
+.tableRow:hover {
+  background: #f9f9f9;
+}
 
+/* ICON CENTER */
+.tableRow div:nth-last-child(1),
+.tableRow div:nth-last-child(2) {
+  display: flex;
+  justify-content: center;
+}
 
+/* ICON */
 .icon {
-  width: 22px;
-  height: 22px;
+  width: 18px;
   cursor: pointer;
-  transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
-.icon:hover {
-  transform: scale(1.15);
-  opacity: 0.8;
-}
-
-/* =====================
-   Edit Row
-===================== */
+/* FORM */
 .editRow {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr auto auto; /* inputs + save/cancel */
-  gap: 8px;
-  margin-top: 14px;
-  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+  border-top: 1px solid #eee;
+  padding-top: 10px;
 }
-
 
 .input {
-  width: 100%;
-  box-sizing: border-box;
+  flex: 1;
+  min-width: 140px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
 }
 
+/* SUBJECTS */
+.subjectBox {
+  border: 1px solid #ddd;
+  padding: 6px;
+  border-radius: 8px;
+  max-height: 80px;
+  overflow-y: auto;
+}
 
-/* =====================
-   Bottom Actions
-===================== */
+.subjectList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.subjectItem {
+  background: #eaf4ff;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+}
+
+/* ACTIONS */
 .actions {
   display: flex;
   justify-content: space-between;
-  margin-top: 18px;
-  align-items: center;
-  flex-wrap: wrap;
+  margin-top: 15px;
+}
+
+.leftActions {
+  display: flex;
   gap: 10px;
 }
 
 .leftActions button,
 .rightActions button {
-  padding: 10px 16px;
-  border-radius: 8px;
+  padding: 10px 14px;
   border: none;
+  border-radius: 8px;
   cursor: pointer;
-  font-weight: 600;
-  font-family: "Poppins", sans-serif;
-  font-size: 1rem;
-  color: white;
-  transition: transform 0.2s ease, background-color 0.3s ease;
+  font-weight: bold;
 }
 
-.leftActions {
-  display: flex;
-  gap: 20px; /* increased spacing between buttons */
-  justify-content: flex-start;
-  flex-wrap: wrap;
-}
-.leftActions button:hover,
-.rightActions button:hover {
-  transform: scale(1.05);
-}
-
-/* Color-coded buttons */
 .leftActions button:nth-child(1) {
-  background: #66b3ff; /* Light Blue - Add/Edit */
+  background: #66b3ff;
+  color: white;
 }
 
 .leftActions button:nth-child(2) {
-  background: #ff7b7b; /* Light Red - Delete */
+  background: #ff7b7b;
+  color: white;
 }
 
 .leftActions button:nth-child(3) {
-  background: #ffd166; /* Light Yellow - Save for now */
-  color: #222;
+  background: #ffd166;
 }
 
 .submitBtn {
-  background: #90ee90; /* Light Green - Submit */
-  color: #1a1a1a;
+  background: #90ee90;
+  color: white;
 }
 
-
-/* =====================
-   Error Message
-===================== */
 .error {
-  color: #c00;
+  color: red;
   margin-top: 10px;
-  font-weight: 500;
-  font-size: 0.95rem;
 }

@@ -1,27 +1,38 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import styles from "./addSession.module.css";
+import styles from "./addSubjectCombination.module.css";
 import ConfirmModal from "./ConfirmModal";
+import DropdownPopup from "./DropdownPopup";
 
-export default function AddSessionModal({ onClose, onSubmit, sessions, setSessions }) {
+export default function AddSubjectCombinationModal({
+  onClose,
+  onSubmit,
+  subjects,
+  setSubjectCombinations,
+  subjectCombinations,
+}) {
   const [localRows, setLocalRows] = useState(() =>
-    sessions?.length ? sessions.map(r => ({ ...r })) : []
+    subjectCombinations?.length ? subjectCombinations.map(r => ({ ...r })) : []
   );
 
   const [mode, setMode] = useState("");
   const [editingIndex, setEditingIndex] = useState(null);
 
-  // ✅ UPDATED FORM
   const [form, setForm] = useState({
     sr: "",
-    sessionId: "",
-    year: ""
+    combinationId: "",
+    subject1: "",
+    subject2: "",
   });
 
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
+
+  // ✅ NEW POPUPS
+  const [showSub1Popup, setShowSub1Popup] = useState(false);
+  const [showSub2Popup, setShowSub2Popup] = useState(false);
 
   const MAX_VISIBLE = 3;
 
@@ -31,34 +42,21 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
     return () => (document.body.style.overflow = prev);
   }, []);
 
-  // ================= CLOSE =================
   const handleClose = () => {
-    setSessions(localRows);
+    setSubjectCombinations(localRows);
     onClose();
   };
 
-  // ================= CRUD =================
+  // ================= ADD =================
   const startAdd = () => {
     setMode("add");
     setEditingIndex(localRows.length);
 
     setForm({
       sr: (localRows.length + 1).toString(),
-      sessionId: "",
-      year: ""
-    });
-
-    setError("");
-  };
-
-  const startAddAt = (index) => {
-    setMode("add");
-    setEditingIndex(index);
-
-    setForm({
-      sr: (index + 1).toString(),
-      sessionId: "",
-      year: ""
+      combinationId: "",
+      subject1: "",
+      subject2: "",
     });
 
     setError("");
@@ -73,14 +71,30 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
 
   // ================= SAVE =================
   const saveRow = () => {
-    if (!form.sessionId.trim()) {
-      setError("Session ID is required");
-      return;
-    }
+    if (!(form.combinationId || "").trim())
+      return setError("Combination ID required");
 
-    if (!form.year.trim()) {
-      setError("Session name is required");
-      return;
+    if (!form.subject1)
+      return setError("Select Subject 1");
+
+    if (!form.subject2)
+      return setError("Select Subject 2");
+
+    if (form.subject1 === form.subject2)
+      return setError("Subject 1 and Subject 2 cannot be same");
+
+    // ❌ prevent duplicate + reverse duplicate
+    const isDuplicatePair = localRows.some((row, idx) => {
+      if (mode === "edit" && idx === editingIndex) return false;
+
+      return (
+        (row.subject1 === form.subject1 && row.subject2 === form.subject2) ||
+        (row.subject1 === form.subject2 && row.subject2 === form.subject1)
+      );
+    });
+
+    if (isDuplicatePair) {
+      return setError("This subject combination already exists (reversed pair not allowed)");
     }
 
     const updated = [...localRows];
@@ -102,11 +116,17 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
     setLocalRows(normalized);
     setMode("");
     setEditingIndex(null);
-    setForm({ sr: "", sessionId: "", year: "" });
+
+    setForm({
+      sr: "",
+      combinationId: "",
+      subject1: "",
+      subject2: "",
+    });
+
     setError("");
   };
 
-  // ================= DELETE =================
   const deleteRow = (i) => {
     const updated = localRows
       .filter((_, idx) => idx !== i)
@@ -114,51 +134,49 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
 
     setLocalRows(updated);
 
-    if (updated.length === 0) {
-      setSessions([]);
-    }
+    if (updated.length === 0) setSubjectCombinations([]);
   };
 
-  // ================= RESET =================
   const resetAll = () => setShowConfirm(true);
 
   const confirmReset = () => {
     setLocalRows([]);
-    setSessions([]);
+    setSubjectCombinations([]);
     setShowConfirm(false);
+    setMode("");
+    setEditingIndex(null);
   };
 
-  // ================= SUBMIT =================
   const handleSubmit = () => {
-    if (localRows.length === 0) {
-      setError("Add at least one entry before submitting");
-      return;
-    }
+    if (localRows.length === 0)
+      return setError("Add at least one combination");
 
-    setSessions(localRows);
+    setSubjectCombinations(localRows);
     onSubmit(localRows);
   };
 
   const handleSaveForNow = () => {
-    setSessions(localRows);
+    setSubjectCombinations(localRows);
     onClose();
   };
 
-  // ================= SEARCH =================
-  const handleSearchToggle = () => {
-    setMode(m => (m === "search" ? "" : "search"));
-    setSearchQuery("");
-  };
-
+  // ================= FILTER =================
   const filteredRows = localRows.filter(row =>
-    row.year.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    row.sessionId.toLowerCase().includes(searchQuery.toLowerCase())
+    (row.combinationId || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (row.subject1 || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (row.subject2 || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const visibleRows = Array.from(
     { length: Math.max(MAX_VISIBLE, filteredRows.length) },
     (_, i) => filteredRows[i] || null
   );
+
+  // ✅ FORMAT SUBJECTS WITH CODE
+  const subjectOptions = subjects?.map((s, i) => ({
+    id: i,
+    name: `${s.name} (${s.code})`,
+  }));
 
   return (
     <>
@@ -172,15 +190,14 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
 
           {/* HEADER */}
           <div className={styles.header}>
-            <h2 style={{ flex: 1, textAlign: "center" }}>SESSIONS</h2>
+            <h2>SUBJECT COMBINATIONS</h2>
 
             <div className={styles.headerRight}>
-              <button onClick={handleSearchToggle}>🔍</button>
+              <button onClick={() => setMode(m => m === "search" ? "" : "search")}>🔍</button>
               <button onClick={handleClose}>✕</button>
             </div>
           </div>
 
-          {/* SEARCH */}
           {mode === "search" && (
             <input
               className={styles.input}
@@ -193,40 +210,33 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
           {/* TABLE */}
           <div className={styles.tableWrapper}>
             <div className={styles.tableHead}>
-              <div>Sr No.</div>
-              <div>Session ID</div>
-              <div>Session Name</div>
+              <div>Sr</div>
+              <div>Combination ID</div>
+              <div>Subject 1</div>
+              <div>Subject 2</div>
               <div>Actions</div>
+              <div>Delete</div>
             </div>
 
             <div className={styles.tableBody}>
               {visibleRows.map((row, idx) => (
                 <div className={styles.tableRow} key={idx}>
                   <div>{row ? row.sr : idx + 1}</div>
-                  <div>{row ? row.sessionId : "—"}</div>
-                  <div>{row ? row.year : "—"}</div>
+                  <div>{row ? row.combinationId : "—"}</div>
+                  <div>{row ? row.subject1 : "—"}</div>
+                  <div>{row ? row.subject2 : "—"}</div>
 
                   <div>
                     {row ? (
-                      <img
-                        src="/edit.png"
-                        className={styles.icon}
-                        onClick={() => startEdit(idx)}
-                      />
+                      <img src="/edit.png" className={styles.icon} onClick={() => startEdit(idx)} />
                     ) : (
-                      <img
-                        src="/img1.png"
-                        className={styles.icon}
-                        onClick={() => startAddAt(idx)}
-                      />
+                      <img src="/img1.png" className={styles.icon} onClick={startAdd} />
                     )}
+                  </div>
 
+                  <div>
                     {row && (
-                      <img
-                        src="/trash.png"
-                        className={styles.icon}
-                        onClick={() => deleteRow(idx)}
-                      />
+                      <img src="/trash.png" className={styles.icon} onClick={() => deleteRow(idx)} />
                     )}
                   </div>
                 </div>
@@ -234,27 +244,28 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
             </div>
           </div>
 
-          {/* EDIT ROW */}
+          {/* EDIT FORM */}
           {(mode === "add" || mode === "edit") && (
             <div className={styles.editRow}>
 
               <input
                 className={styles.input}
-                placeholder="Session ID"
-                value={form.sessionId}
+                placeholder="Combination ID"
+                value={form.combinationId}
                 onChange={(e) =>
-                  setForm({ ...form, sessionId: e.target.value })
+                  setForm({ ...form, combinationId: e.target.value })
                 }
               />
 
-              <input
-                className={styles.input}
-                placeholder="Session Name"
-                value={form.year}
-                onChange={(e) =>
-                  setForm({ ...form, year: e.target.value })
-                }
-              />
+              {/* SUBJECT 1 */}
+              <button onClick={() => setShowSub1Popup(true)}>
+                {form.subject1 || "Select Subject 1"}
+              </button>
+
+              {/* SUBJECT 2 */}
+              <button onClick={() => setShowSub2Popup(true)}>
+                {form.subject2 || "Select Subject 2"}
+              </button>
 
               <button onClick={saveRow}>Save</button>
               <button onClick={() => setMode("")}>Cancel</button>
@@ -281,9 +292,31 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
         </div>
       </div>
 
+      {/* SUBJECT POPUPS */}
+      {showSub1Popup && (
+        <DropdownPopup
+          title="Select Subject 1"
+          options={subjectOptions}
+          selected={form.subject1}
+          onSelect={(val) => setForm({ ...form, subject1: val })}
+          onClose={() => setShowSub1Popup(false)}
+        />
+      )}
+
+      {showSub2Popup && (
+        <DropdownPopup
+          title="Select Subject 2"
+          options={subjectOptions}
+          selected={form.subject2}
+          onSelect={(val) => setForm({ ...form, subject2: val })}
+          onClose={() => setShowSub2Popup(false)}
+        />
+      )}
+
+      {/* CONFIRM */}
       {showConfirm && (
         <ConfirmModal
-          message="This will delete all sessions and dependent data. Continue?"
+          message="This will delete all subject combinations. Continue?"
           onConfirm={confirmReset}
           onCancel={() => setShowConfirm(false)}
         />

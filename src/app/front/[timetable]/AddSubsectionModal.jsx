@@ -1,21 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import styles from "./addSection.module.css";
+import styles from "./addSubsection.module.css";
 import ConfirmModal from "./ConfirmModal";
 import DropdownPopup from "./DropdownPopup";
-import TimeslotPickerModal from "./TimeslotPickerModal";
+import GroupSubjectPickerModal from "./GroupSubjectPickerModal";
 
-export default function AddSectionModal({
+export default function AddSubsectionModal({
   onClose,
   onSubmit,
+  subsections,
+  setSubsections,
   sections,
-  setSections,
-  teachers,
-  timeslots,
+  groupSubjects,
 }) {
   const [localRows, setLocalRows] = useState(() =>
-    sections?.length ? sections.map((r) => ({ ...r })) : []
+    subsections?.length ? subsections.map((r) => ({ ...r })) : []
   );
 
   const [mode, setMode] = useState("");
@@ -25,20 +25,18 @@ export default function AddSectionModal({
     sr: "",
     id: "",
     name: "",
+    parent: "",
+    groupSubjectIds: [],
     studentCount: "",
-    advisor: "",
-    timeslotIds: [],
-    subsections: [],
   };
 
   const [form, setForm] = useState(emptyForm);
 
-  const [error, setError] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showConfirm, setShowConfirm] = useState(false);
+  
 
-  const [showTeacherPopup, setShowTeacherPopup] = useState(false);
-  const [showTimeslotPicker, setShowTimeslotPicker] = useState(false);
+  const [showSection, setShowSection] = useState(false);
+  const [showGS, setShowGS] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const MAX_VISIBLE = 3;
 
@@ -46,11 +44,6 @@ export default function AddSectionModal({
     document.body.style.overflow = "hidden";
     return () => (document.body.style.overflow = "");
   }, []);
-
-  const handleClose = () => {
-    setSections(localRows);
-    onClose();
-  };
 
   const startAdd = () => {
     setMode("add");
@@ -65,13 +58,9 @@ export default function AddSectionModal({
   };
 
   const saveRow = () => {
-    if (!form.id) return setError("ID required");
-    if (!form.name) return setError("Name required");
-
     const updated = [...localRows];
-
     if (mode === "edit") updated[editingIndex] = form;
-    else updated.push({ ...form });
+    else updated.push(form);
 
     setLocalRows(updated.map((r, i) => ({ ...r, sr: (i + 1).toString() })));
     setMode("");
@@ -83,56 +72,33 @@ export default function AddSectionModal({
   };
 
   const handleSubmit = () => {
-    if (!localRows.length) return setError("Add at least one section");
-    setSections(localRows);
+    setSubsections(localRows);
     onSubmit(localRows);
   };
 
-const filteredRows = localRows.filter((row) =>
-  (row.id || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-  (row.name || "").toLowerCase().includes(searchQuery.toLowerCase())
-);
-
-const visibleRows = Array.from(
-  { length: Math.max(MAX_VISIBLE, filteredRows.length) },
-  (_, i) => filteredRows[i] || null
-);
+  const visibleRows = Array.from(
+    { length: Math.max(MAX_VISIBLE, localRows.length) },
+    (_, i) => localRows[i] || null
+  );
 
   return (
     <>
       <div className={styles.overlay}>
         <div className={styles.modal}>
-          {/* HEADER */}
-<div className={styles.header}>
-  <h2>SECTIONS</h2>
+          <div className={styles.header}>
+            <h2>SUBSECTIONS</h2>
+            <button onClick={onClose}>✕</button>
+          </div>
 
-  <div>
-    <button onClick={() => setSearchQuery((p) => (p ? "" : " "))}>
-      🔍
-    </button>
-    <button onClick={handleClose}>✕</button>
-  </div>
-</div>
-
-{searchQuery && (
-  <input
-    className={styles.input}
-    placeholder="Search..."
-    value={searchQuery}
-    onChange={(e) => setSearchQuery(e.target.value)}
-  />
-)}
-
-          {/* TABLE */}
           <div className={styles.tableWrapper}>
             <div className={styles.tableHead}>
               <div>Sr</div>
               <div>ID</div>
               <div>Name</div>
+              <div>Section</div>
               <div>Students</div>
-              <div>Advisor</div>
-              <div>Timeslots</div>
-              <div>Actions</div>
+              <div>Subjects</div>
+              <div>Edit</div>
               <div>Del</div>
             </div>
 
@@ -142,9 +108,9 @@ const visibleRows = Array.from(
                   <div>{row ? row.sr : i + 1}</div>
                   <div>{row?.id || "—"}</div>
                   <div>{row?.name || "—"}</div>
+                  <div>{row?.parent || "—"}</div>
                   <div>{row?.studentCount || "—"}</div>
-                  <div>{row?.advisor || "—"}</div>
-                  <div>{row?.timeslotIds?.length || 0}</div>
+                  <div>{row?.groupSubjectIds?.length || 0}</div>
 
                   <div>
                     {row ? (
@@ -164,25 +130,26 @@ const visibleRows = Array.from(
             </div>
           </div>
 
-          {/* EDIT ROW */}
           {(mode === "add" || mode === "edit") && (
             <div className={styles.editRow}>
-              <input className={styles.input} placeholder="ID" value={form.id}
+              <input className={styles.input} placeholder="ID"
+                value={form.id}
                 onChange={(e) => setForm({ ...form, id: e.target.value })} />
 
-              <input className={styles.input} placeholder="Name" value={form.name}
+              <input className={styles.input} placeholder="Name"
+                value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })} />
+
+              <button onClick={() => setShowSection(true)}>
+                {form.parent || "Select Section"}
+              </button>
 
               <input className={styles.input} placeholder="Students"
                 value={form.studentCount}
                 onChange={(e) => setForm({ ...form, studentCount: e.target.value })} />
 
-              <button onClick={() => setShowTeacherPopup(true)}>
-                {form.advisor || "Select Advisor"}
-              </button>
-
-              <button onClick={() => setShowTimeslotPicker(true)}>
-                Timeslots ({form.timeslotIds.length})
+              <button onClick={() => setShowGS(true)}>
+                Subjects ({form.groupSubjectIds.length})
               </button>
 
               <button onClick={saveRow}>Save</button>
@@ -190,9 +157,6 @@ const visibleRows = Array.from(
             </div>
           )}
 
-          {error && <div className={styles.error}>{error}</div>}
-
-          {/* ACTIONS */}
           <div className={styles.actions}>
             <div className={styles.leftActions}>
               <button onClick={startAdd}>Add</button>
@@ -206,30 +170,30 @@ const visibleRows = Array.from(
         </div>
       </div>
 
-      {showTeacherPopup && (
+      {showSection && (
         <DropdownPopup
-          title="Select Teacher"
-          options={teachers.map((t, i) => ({ id: i, name: t.name }))}
-          selected={form.advisor}
-          onSelect={(val) => setForm({ ...form, advisor: val })}
-          onClose={() => setShowTeacherPopup(false)}
+          title="Select Section"
+          options={sections.map((s, i) => ({ id: i, name: s.name }))}
+          selected={form.parent}
+          onSelect={(val) => setForm({ ...form, parent: val })}
+          onClose={() => setShowSection(false)}
         />
       )}
 
-      {showTimeslotPicker && (
-        <TimeslotPickerModal
-          timeslots={timeslots}
-          selectedTimeslots={form.timeslotIds}
-          setSelectedTimeslots={(ids) =>
-            setForm({ ...form, timeslotIds: ids })
+      {showGS && (
+        <GroupSubjectPickerModal
+          groupSubjects={groupSubjects}
+          selected={form.groupSubjectIds}
+          setSelected={(ids) =>
+            setForm({ ...form, groupSubjectIds: ids })
           }
-          onClose={() => setShowTimeslotPicker(false)}
+          onClose={() => setShowGS(false)}
         />
       )}
 
       {showConfirm && (
         <ConfirmModal
-          message="Delete all sections?"
+          message="Delete all subsections?"
           onConfirm={() => {
             setLocalRows([]);
             setShowConfirm(false);

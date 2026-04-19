@@ -2,90 +2,153 @@
 
 import { useEffect, useState } from "react";
 import styles from "./addShift.module.css";
+import ConfirmModal from "./ConfirmModal";
 
 export default function AddShiftModal({ onClose, onSubmit, shifts, setShifts }) {
   const [localRows, setLocalRows] = useState(() =>
-    shifts && shifts.length ? shifts.map(r => ({ ...r })) : []
+    shifts?.length ? shifts.map(r => ({ ...r })) : []
   );
 
   const [mode, setMode] = useState("");
   const [editingIndex, setEditingIndex] = useState(null);
+
   const [form, setForm] = useState({
-    shift: "",
-    startMonThurs: "",
-    startFri: "",
-    endMonThurs: "",
-    endFri: "",
+    sr: "",
+    shiftId: "",
+    shiftName: ""
   });
+
   const [error, setError] = useState("");
-  const [searchQuery, setSearchQuery] = useState(""); // ✅ search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showConfirm, setShowConfirm] = useState(false);
+
   const MAX_VISIBLE = 3;
 
-  // prevent background scroll
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
+    return () => (document.body.style.overflow = prev);
   }, []);
 
-  // === Add / Edit Functions ===
+  // ================= CLOSE =================
+  const handleClose = () => {
+    setShifts(localRows);
+    onClose();
+  };
+
+  // ================= ADD =================
   const startAdd = () => {
     setMode("add");
+    setEditingIndex(localRows.length);
+
     setForm({
-      shift: "",
-      startMonThurs: "",
-      startFri: "",
-      endMonThurs: "",
-      endFri: "",
+      sr: (localRows.length + 1).toString(),
+      shiftId: "",
+      shiftName: ""
     });
+
     setError("");
   };
 
+  const startAddAt = (index) => {
+    setMode("add");
+    setEditingIndex(index);
+
+    setForm({
+      sr: (index + 1).toString(),
+      shiftId: "",
+      shiftName: ""
+    });
+
+    setError("");
+  };
+
+  // ================= EDIT =================
   const startEdit = (index) => {
     setMode("edit");
     setEditingIndex(index);
-    const r = localRows[index];
-    setForm({ ...r });
+    setForm(localRows[index]);
     setError("");
   };
 
+  // ================= SAVE =================
   const saveRow = () => {
-    const { shift, startMonThurs, startFri, endMonThurs, endFri } = form;
-    if (!shift || !startMonThurs || !endMonThurs) {
-      setError("⚠ Please fill all required fields.");
+    if (!form.shiftId.trim()) {
+      setError("Shift ID is required");
+      return;
+    }
+
+    if (!form.shiftName.trim()) {
+      setError("Shift Name is required");
+      return;
+    }
+
+    // UNIQUE CHECK
+    const duplicate = localRows.find(
+      (r, i) =>
+        r.shiftId === form.shiftId &&
+        i !== editingIndex
+    );
+
+    if (duplicate) {
+      setError("Shift ID must be unique");
       return;
     }
 
     const updated = [...localRows];
-    if (mode === "edit" && editingIndex !== null) {
+
+    if (mode === "edit") {
       updated[editingIndex] = form;
     } else {
-      updated.push(form);
+      updated.push({
+        ...form,
+        sr: (updated.length + 1).toString(),
+      });
     }
-    setLocalRows(updated);
+
+    const normalized = updated.map((r, i) => ({
+      ...r,
+      sr: (i + 1).toString(),
+    }));
+
+    setLocalRows(normalized);
     setMode("");
-    setForm({
-      shift: "",
-      startMonThurs: "",
-      startFri: "",
-      endMonThurs: "",
-      endFri: "",
-    });
+    setEditingIndex(null);
+    setForm({ sr: "", shiftId: "", shiftName: "" });
+    setError("");
   };
 
-  const deleteRow = (index) => {
-    const updated = localRows.filter((_, i) => i !== index);
+  // ================= DELETE =================
+  const deleteRow = (i) => {
+    const updated = localRows
+      .filter((_, idx) => idx !== i)
+      .map((r, j) => ({ ...r, sr: (j + 1).toString() }));
+
     setLocalRows(updated);
+
+    if (updated.length === 0) {
+      setShifts([]);
+    }
   };
 
-  // === Submit / Save / Reset ===
+  // ================= RESET =================
+  const resetAll = () => setShowConfirm(true);
+
+const confirmReset = () => {
+  setLocalRows([]);
+  setShifts([]);
+  setShowConfirm(false);
+
+  setMode("");
+  setEditingIndex(null);
+};
+  // ================= SUBMIT =================
   const handleSubmit = () => {
     if (localRows.length === 0) {
-      setError("⚠ Please add at least one shift before submitting.");
+      setError("Add at least one shift");
       return;
     }
+
     setShifts(localRows);
     onSubmit(localRows);
   };
@@ -95,166 +158,150 @@ export default function AddShiftModal({ onClose, onSubmit, shifts, setShifts }) 
     onClose();
   };
 
-  const resetAll = () => {
-    setLocalRows([]);
-    setForm({
-      shift: "",
-      startMonThurs: "",
-      startFri: "",
-      endMonThurs: "",
-      endFri: "",
-    });
-    setError("");
-  };
-
-  // === Search ===
+  // ================= SEARCH =================
   const handleSearchToggle = () => {
-    setMode((m) => (m === "search" ? "" : "search"));
+    setMode(m => (m === "search" ? "" : "search"));
     setSearchQuery("");
   };
 
-  const filteredRows = localRows.filter((row) =>
-    row.shift.toLowerCase().includes(searchQuery.toLowerCase())
+const filteredRows = localRows.filter(row =>
+  (row.shiftName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+  (row.shiftId || "").toLowerCase().includes(searchQuery.toLowerCase())
+);
+
+  const visibleRows = Array.from(
+    { length: Math.max(MAX_VISIBLE, filteredRows.length) },
+    (_, i) => filteredRows[i] || null
   );
 
-  const visibleRowsCount = Math.max(MAX_VISIBLE, filteredRows.length);
-  const visibleRows = Array.from({ length: visibleRowsCount }, (_, i) => filteredRows[i] || null);
-
   return (
-    <div
-      className={styles.overlay}
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className={styles.modal}>
-        <div className={styles.header}>
-          <h2 style={{ textAlign: "center", flex: 1 }}>SHIFTS</h2>
-          <div className={styles.headerRight}>
-            <button
-              className={`${styles.iconCircle} ${styles.searchBtn}`}
-              title="Search"
-              onClick={handleSearchToggle}
-            >
-              🔍
-            </button>
-            <button className={`${styles.iconCircle} ${styles.closeBtn}`} onClick={onClose} title="Close">
-              ✕
-            </button>
-          </div>
-        </div>
+    <>
+      <div
+        className={styles.overlay}
+        onMouseDown={(e) => {
+          if (e.target === e.currentTarget) handleClose();
+        }}
+      >
+        <div className={styles.modal}>
 
-        {/* === SEARCH INPUT === */}
-        {mode === "search" && (
-          <div className={styles.searchRow}>
+          {/* HEADER */}
+          <div className={styles.header}>
+            <h2 style={{ flex: 1, textAlign: "center" }}>SHIFTS</h2>
+
+            <div className={styles.headerRight}>
+              <button onClick={handleSearchToggle}>🔍</button>
+              <button onClick={handleClose}>✕</button>
+            </div>
+          </div>
+
+          {/* SEARCH */}
+          {mode === "search" && (
             <input
               className={styles.input}
-              placeholder="Search shift by name..."
+              placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-          </div>
-        )}
+          )}
 
-        <div className={styles.tableWrapper}>
-          <div className={styles.tableHead}>
-            <div>Shift</div>
-            <div>Start (Mon–Thu)</div>
-            <div>Start (Fri)</div>
-            <div>End (Mon–Thu)</div>
-            <div>End (Fri)</div>
-            <div></div>
-          </div>
+          {/* TABLE */}
+          <div className={styles.tableWrapper}>
+            <div className={styles.tableHead}>
+              <div>Sr No.</div>
+              <div>Shift ID</div>
+              <div>Shift Name</div>
+              <div>Actions</div>
+            </div>
 
-          <div className={styles.tableBody}>
-            {visibleRows.map((row, idx) => (
-              <div className={styles.tableRow} key={idx}>
-                <div>{row ? row.shift : "—"}</div>
-                <div>{row ? row.startMonThurs : "—"}</div>
-                <div>{row ? row.startFri : "—"}</div>
-                <div>{row ? row.endMonThurs : "—"}</div>
-                <div>{row ? row.endFri : "—"}</div>
-                <div>
-                  {row ? (
-                    <>
+            <div className={styles.tableBody}>
+              {visibleRows.map((row, idx) => (
+                <div className={styles.tableRow} key={idx}>
+                  <div>{row ? row.sr : idx + 1}</div>
+                  <div>{row ? row.shiftId : "—"}</div>
+                  <div>{row ? row.shiftName : "—"}</div>
+
+                  <div>
+                    {row ? (
                       <img
                         src="/edit.png"
-                        alt="Edit"
                         className={styles.icon}
                         onClick={() => startEdit(idx)}
                       />
+                    ) : (
+                      <img
+                        src="/img1.png"
+                        className={styles.icon}
+                        onClick={() => startAddAt(idx)}
+                      />
+                    )}
+
+                    {row && (
                       <img
                         src="/trash.png"
-                        alt="Delete"
                         className={styles.icon}
                         onClick={() => deleteRow(idx)}
                       />
-                    </>
-                  ) : (
-                    <img
-                      src="/img1.png"
-                      alt="Add"
-                      className={styles.icon}
-                      onClick={startAdd}
-                    />
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {(mode === "add" || mode === "edit") && (
-          <div className={styles.editRow}>
-            <input
-              className={styles.input}
-              placeholder="Shift (Morning/Evening)"
-              value={form.shift}
-              onChange={(e) => setForm({ ...form, shift: e.target.value })}
-            />
-            <input
-              className={styles.input}
-              placeholder="Start (Mon–Thu)"
-              value={form.startMonThurs}
-              onChange={(e) => setForm({ ...form, startMonThurs: e.target.value })}
-            />
-            <input
-              className={styles.input}
-              placeholder="Start (Fri)"
-              value={form.startFri}
-              onChange={(e) => setForm({ ...form, startFri: e.target.value })}
-            />
-            <input
-              className={styles.input}
-              placeholder="End (Mon–Thu)"
-              value={form.endMonThurs}
-              onChange={(e) => setForm({ ...form, endMonThurs: e.target.value })}
-            />
-            <input
-              className={styles.input}
-              placeholder="End (Fri)"
-              value={form.endFri}
-              onChange={(e) => setForm({ ...form, endFri: e.target.value })}
-            />
-            <button onClick={saveRow}>Save</button>
-            <button onClick={() => setMode("")}>Cancel</button>
-          </div>
-        )}
-
-        {error && <div className={styles.error}>{error}</div>}
-
-        <div className={styles.actions}>
-          <div className={styles.leftActions}>
-            <button onClick={startAdd}>Add</button>
-            <button onClick={resetAll}>Reset</button>
-            <button onClick={handleSaveForNow}>Save for now</button>
+              ))}
+            </div>
           </div>
 
-          <div className={styles.rightActions}>
-            <button className={styles.submitBtn} onClick={handleSubmit}>Submit</button>
+          {/* EDIT ROW */}
+          {(mode === "add" || mode === "edit") && (
+            <div className={styles.editRow}>
+
+              <input
+                className={styles.input}
+                placeholder="Shift ID"
+                value={form.shiftId}
+                onChange={(e) =>
+                  setForm({ ...form, shiftId: e.target.value })
+                }
+              />
+
+              <input
+                className={styles.input}
+                placeholder="Shift Name"
+                value={form.shiftName}
+                onChange={(e) =>
+                  setForm({ ...form, shiftName: e.target.value })
+                }
+              />
+
+              <button onClick={saveRow}>Save</button>
+              <button onClick={() => setMode("")}>Cancel</button>
+            </div>
+          )}
+
+          {error && <div className={styles.error}>{error}</div>}
+
+          {/* ACTIONS */}
+          <div className={styles.actions}>
+            <div className={styles.leftActions}>
+              <button onClick={startAdd}>Add</button>
+              <button onClick={resetAll}>Reset</button>
+              <button onClick={handleSaveForNow}>Save for now</button>
+            </div>
+
+            <div className={styles.rightActions}>
+              <button className={styles.submitBtn} onClick={handleSubmit}>
+                Submit
+              </button>
+            </div>
           </div>
+
         </div>
       </div>
-    </div>
+
+      {showConfirm && (
+        <ConfirmModal
+          message="This will delete all shifts and dependent data. Continue?"
+          onConfirm={confirmReset}
+          onCancel={() => setShowConfirm(false)}
+        />
+      )}
+    </>
   );
 }

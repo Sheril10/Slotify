@@ -20,6 +20,7 @@
   box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
   overflow-y: auto;
   scrollbar-width: none; /* Firefox */
+  padding-top: 10px;
 }
 .sidebar::-webkit-scrollbar {
   display: none; /* Chrome, Safari */
@@ -49,7 +50,7 @@
 .logo {
   width: 130px;
   border-radius: 15px;
-  margin-bottom: 2rem;
+  margin-bottom: 8px;
 }
 
 .nav {
@@ -333,4 +334,43 @@
 .trashIcon:hover {
   opacity: 1;
   transform: scale(1.15);
+}
+
+.userBox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  margin: 6px 0; /* reduced spacing */
+  border-radius: 10px;
+  background: rgba(255,255,255,0.08);
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1b9cb0, #80fff4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+}
+
+.userInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.usernameText {
+  font-size: 14px;
+  font-weight: bold;
+  color: rgb(0, 0, 0);
+}
+
+.emailText {
+  font-size: 12px;
+  opacity: 0.75;
+  color: rgb(0, 0, 0);
 }

@@ -1,22 +1,30 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import styles from "./addSession.module.css";
+import styles from "./addTimeslot.module.css";
 import ConfirmModal from "./ConfirmModal";
 
-export default function AddSessionModal({ onClose, onSubmit, sessions, setSessions }) {
+export default function AddTimeslotModal({
+  onClose,
+  onSubmit,
+  timeslots,
+  setTimeslots,
+  shifts,
+}) {
   const [localRows, setLocalRows] = useState(() =>
-    sessions?.length ? sessions.map(r => ({ ...r })) : []
+    timeslots?.length ? timeslots.map(r => ({ ...r })) : []
   );
 
   const [mode, setMode] = useState("");
   const [editingIndex, setEditingIndex] = useState(null);
 
-  // ✅ UPDATED FORM
   const [form, setForm] = useState({
     sr: "",
-    sessionId: "",
-    year: ""
+    scheduleId: "",
+    shift: "",
+    dayOfWeek: "",
+    startTime: "",
+    endTime: ""
   });
 
   const [error, setError] = useState("");
@@ -33,32 +41,22 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
 
   // ================= CLOSE =================
   const handleClose = () => {
-    setSessions(localRows);
+    setTimeslots(localRows);
     onClose();
   };
 
-  // ================= CRUD =================
+  // ================= ADD =================
   const startAdd = () => {
     setMode("add");
     setEditingIndex(localRows.length);
 
     setForm({
       sr: (localRows.length + 1).toString(),
-      sessionId: "",
-      year: ""
-    });
-
-    setError("");
-  };
-
-  const startAddAt = (index) => {
-    setMode("add");
-    setEditingIndex(index);
-
-    setForm({
-      sr: (index + 1).toString(),
-      sessionId: "",
-      year: ""
+      scheduleId: "",
+      shift: "",
+      dayOfWeek: "",
+      startTime: "",
+      endTime: ""
     });
 
     setError("");
@@ -71,17 +69,12 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
     setError("");
   };
 
-  // ================= SAVE =================
   const saveRow = () => {
-    if (!form.sessionId.trim()) {
-      setError("Session ID is required");
-      return;
-    }
-
-    if (!form.year.trim()) {
-      setError("Session name is required");
-      return;
-    }
+    if (!form.scheduleId.trim()) return setError("Schedule ID required");
+    if (!form.shift) return setError("Select shift");
+    if (!form.dayOfWeek) return setError("Select day");
+    if (!form.startTime) return setError("Start time required");
+    if (!form.endTime) return setError("End time required");
 
     const updated = [...localRows];
 
@@ -102,11 +95,19 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
     setLocalRows(normalized);
     setMode("");
     setEditingIndex(null);
-    setForm({ sr: "", sessionId: "", year: "" });
+
+    setForm({
+      sr: "",
+      scheduleId: "",
+      shift: "",
+      dayOfWeek: "",
+      startTime: "",
+      endTime: ""
+    });
+
     setError("");
   };
 
-  // ================= DELETE =================
   const deleteRow = (i) => {
     const updated = localRows
       .filter((_, idx) => idx !== i)
@@ -114,45 +115,35 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
 
     setLocalRows(updated);
 
-    if (updated.length === 0) {
-      setSessions([]);
-    }
+    if (updated.length === 0) setTimeslots([]);
   };
 
-  // ================= RESET =================
   const resetAll = () => setShowConfirm(true);
 
   const confirmReset = () => {
     setLocalRows([]);
-    setSessions([]);
+    setTimeslots([]);
     setShowConfirm(false);
+    setMode("");
+    setEditingIndex(null);
   };
 
-  // ================= SUBMIT =================
   const handleSubmit = () => {
-    if (localRows.length === 0) {
-      setError("Add at least one entry before submitting");
-      return;
-    }
+    if (localRows.length === 0) return setError("Add at least one timeslot");
 
-    setSessions(localRows);
+    setTimeslots(localRows);
     onSubmit(localRows);
   };
 
   const handleSaveForNow = () => {
-    setSessions(localRows);
+    setTimeslots(localRows);
     onClose();
   };
 
-  // ================= SEARCH =================
-  const handleSearchToggle = () => {
-    setMode(m => (m === "search" ? "" : "search"));
-    setSearchQuery("");
-  };
-
   const filteredRows = localRows.filter(row =>
-    row.year.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    row.sessionId.toLowerCase().includes(searchQuery.toLowerCase())
+    (row.scheduleId || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (row.shift || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (row.dayOfWeek || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const visibleRows = Array.from(
@@ -162,25 +153,21 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
 
   return (
     <>
-      <div
-        className={styles.overlay}
-        onMouseDown={(e) => {
-          if (e.target === e.currentTarget) handleClose();
-        }}
-      >
+      <div className={styles.overlay} onMouseDown={(e) => {
+        if (e.target === e.currentTarget) handleClose();
+      }}>
         <div className={styles.modal}>
 
           {/* HEADER */}
           <div className={styles.header}>
-            <h2 style={{ flex: 1, textAlign: "center" }}>SESSIONS</h2>
+            <h2 style={{ flex: 1, textAlign: "center" }}>TIMESLOTS</h2>
 
             <div className={styles.headerRight}>
-              <button onClick={handleSearchToggle}>🔍</button>
+              <button onClick={() => setMode(m => m === "search" ? "" : "search")}>🔍</button>
               <button onClick={handleClose}>✕</button>
             </div>
           </div>
 
-          {/* SEARCH */}
           {mode === "search" && (
             <input
               className={styles.input}
@@ -193,40 +180,37 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
           {/* TABLE */}
           <div className={styles.tableWrapper}>
             <div className={styles.tableHead}>
-              <div>Sr No.</div>
-              <div>Session ID</div>
-              <div>Session Name</div>
+              <div>Sr</div>
+              <div>Schedule ID</div>
+              <div>Shift</div>
+              <div>Day</div>
+              <div>Start</div>
+              <div>End</div>
               <div>Actions</div>
+              <div>Delete</div>
             </div>
 
             <div className={styles.tableBody}>
               {visibleRows.map((row, idx) => (
                 <div className={styles.tableRow} key={idx}>
                   <div>{row ? row.sr : idx + 1}</div>
-                  <div>{row ? row.sessionId : "—"}</div>
-                  <div>{row ? row.year : "—"}</div>
+                  <div>{row ? row.scheduleId : "—"}</div>
+                  <div>{row ? row.shift : "—"}</div>
+                  <div>{row ? row.dayOfWeek : "—"}</div>
+                  <div>{row ? row.startTime : "—"}</div>
+                  <div>{row ? row.endTime : "—"}</div>
 
                   <div>
                     {row ? (
-                      <img
-                        src="/edit.png"
-                        className={styles.icon}
-                        onClick={() => startEdit(idx)}
-                      />
+                      <img src="/edit.png" className={styles.icon} onClick={() => startEdit(idx)} />
                     ) : (
-                      <img
-                        src="/img1.png"
-                        className={styles.icon}
-                        onClick={() => startAddAt(idx)}
-                      />
+                      <img src="/img1.png" className={styles.icon} onClick={startAdd} />
                     )}
+                  </div>
 
+                  <div>
                     {row && (
-                      <img
-                        src="/trash.png"
-                        className={styles.icon}
-                        onClick={() => deleteRow(idx)}
-                      />
+                      <img src="/trash.png" className={styles.icon} onClick={() => deleteRow(idx)} />
                     )}
                   </div>
                 </div>
@@ -240,20 +224,50 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
 
               <input
                 className={styles.input}
-                placeholder="Session ID"
-                value={form.sessionId}
-                onChange={(e) =>
-                  setForm({ ...form, sessionId: e.target.value })
-                }
+                placeholder="Schedule ID"
+                value={form.scheduleId}
+                onChange={(e) => setForm({ ...form, scheduleId: e.target.value })}
+              />
+
+              <select
+                className={styles.input}
+                value={form.shift}
+                onChange={(e) => setForm({ ...form, shift: e.target.value })}
+              >
+                <option value="">Select Shift</option>
+                {shifts.map((s, i) => (
+                  <option key={i} value={s.shiftName}>
+                    {s.shiftName}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                className={styles.input}
+                value={form.dayOfWeek}
+                onChange={(e) => setForm({ ...form, dayOfWeek: e.target.value })}
+              >
+                <option value="">Day</option>
+                <option>Monday</option>
+                <option>Tuesday</option>
+                <option>Wednesday</option>
+                <option>Thursday</option>
+                <option>Friday</option>
+                <option>Saturday</option>
+              </select>
+
+              <input
+                type="time"
+                className={styles.input}
+                value={form.startTime}
+                onChange={(e) => setForm({ ...form, startTime: e.target.value })}
               />
 
               <input
+                type="time"
                 className={styles.input}
-                placeholder="Session Name"
-                value={form.year}
-                onChange={(e) =>
-                  setForm({ ...form, year: e.target.value })
-                }
+                value={form.endTime}
+                onChange={(e) => setForm({ ...form, endTime: e.target.value })}
               />
 
               <button onClick={saveRow}>Save</button>
@@ -263,7 +277,7 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
 
           {error && <div className={styles.error}>{error}</div>}
 
-          {/* ACTIONS */}
+          {/* ACTIONS (IDENTICAL TO GROUP) */}
           <div className={styles.actions}>
             <div className={styles.leftActions}>
               <button onClick={startAdd}>Add</button>
@@ -283,7 +297,7 @@ export default function AddSessionModal({ onClose, onSubmit, sessions, setSessio
 
       {showConfirm && (
         <ConfirmModal
-          message="This will delete all sessions and dependent data. Continue?"
+          message="This will delete all timeslots. Continue?"
           onConfirm={confirmReset}
           onCancel={() => setShowConfirm(false)}
         />
